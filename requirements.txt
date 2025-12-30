@@ -1,0 +1,23 @@
+# GUI Framework
+PyQt6>=6.6.0
+PyQt6-WebEngine>=6.6.0
+
+# HTTP Client
+requests>=2.31.0
+urllib3>=2.1.0
+
+# Video Player
+python-vlc>=3.0.0
+
+# Data Visualization
+matplotlib>=3.8.0
+pyqtgraph>=0.13.0
+
+# Configuration & Security
+python-dotenv>=1.0.0
+keyring>=24.0.0
+cryptography>=41.0.0
+
+# Utilities
+python-dateutil>=2.8.2
+Pillow>=10.1.0
