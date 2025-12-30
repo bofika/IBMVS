@@ -28,12 +28,12 @@ This project adheres to a code of conduct that all contributors are expected to 
 1. **Fork the repository** on GitHub
 2. **Clone your fork** locally:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/ibm-video-streaming-manager.git
-   cd ibm-video-streaming-manager
+   git clone https://github.com/YOUR_USERNAME/IBMVS.git
+   cd IBMVS
    ```
 3. **Add upstream remote**:
    ```bash
-   git remote add upstream https://github.com/bofika/ibm-video-streaming-manager.git
+   git remote add upstream https://github.com/bofika/IBMVS.git
    ```
 
 ## Development Setup
@@ -324,7 +324,7 @@ Any other context, mockups, or examples.
 
 If you have questions about contributing, feel free to:
 
-- Open an issue with the "question" label at https://github.com/bofika/ibm-video-streaming-manager/issues
+- Open an issue with the "question" label at https://github.com/bofika/IBMVS/issues
 - Check the [documentation](docs/USER_GUIDE.md)
 
 ## License

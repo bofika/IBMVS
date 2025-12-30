@@ -68,6 +68,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Links
 
-- [GitHub Repository](https://github.com/bofika/ibm-video-streaming-manager)
-- [Issue Tracker](https://github.com/bofika/ibm-video-streaming-manager/issues)
+- [GitHub Repository](https://github.com/bofika/IBMVS)
+- [Issue Tracker](https://github.com/bofika/IBMVS/issues)
 - [IBM Video Streaming API Documentation](https://developers.video.ibm.com/)

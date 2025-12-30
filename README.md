@@ -3,7 +3,7 @@
 [![Python Version](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/)
 [![PyQt6](https://img.shields.io/badge/PyQt6-6.6%2B-green.svg)](https://www.riverbankcomputing.com/software/pyqt/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/bofika/ibm-video-streaming-manager)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/bofika/IBMVS)
 
 A comprehensive cross-platform desktop application for managing IBM Video Streaming services through their API. Built with Python and PyQt6, supporting both macOS and Windows.
 
@@ -64,8 +64,8 @@ A comprehensive cross-platform desktop application for managing IBM Video Stream
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/bofika/ibm-video-streaming-manager.git
-cd ibm-video-streaming-manager
+git clone https://github.com/bofika/IBMVS.git
+cd IBMVS
 ```
 
 2. Create a virtual environment:

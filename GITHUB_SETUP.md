@@ -25,16 +25,14 @@ git config --global user.name "Bofika"
 git config --global user.email "both.gergely@gmail.com"
 ```
 
-## Step 3: Create Repository on GitHub
+## Step 3: Repository Already Created! ✅
 
-1. Go to https://github.com/new
-2. Repository name: `ibm-video-streaming-manager`
-3. Description: "Cross-platform desktop application for managing IBM Video Streaming API"
-4. Choose: **Public** (recommended for open source)
-5. **DO NOT** initialize with README, .gitignore, or license (we already have these)
-6. Click "Create repository"
+Your repository is already live at: **https://github.com/bofika/IBMVS**
 
-Your repository will be at: https://github.com/bofika/ibm-video-streaming-manager
+If you created a different repository name, update the remote URL:
+```bash
+git remote set-url origin https://github.com/bofika/IBMVS.git
+```
 
 ## Step 4: Add All Files to Git
 
@@ -61,10 +59,13 @@ git commit -m "Initial commit: IBM Video Streaming Manager v1.0.0
 ## Step 5: Connect to GitHub Repository
 
 ```bash
-# Add remote repository
-git remote add origin https://github.com/bofika/ibm-video-streaming-manager.git
+# Add remote repository (if not already added)
+git remote add origin https://github.com/bofika/IBMVS.git
 
-# Verify remote was added
+# Or update existing remote
+git remote set-url origin https://github.com/bofika/IBMVS.git
+
+# Verify remote
 git remote -v
 ```
 
@@ -80,7 +81,7 @@ git push -u origin main
 
 If you're using SSH instead of HTTPS:
 ```bash
-git remote set-url origin git@github.com:bofika/ibm-video-streaming-manager.git
+git remote set-url origin git@github.com:bofika/IBMVS.git
 git push -u origin main
 ```
 
@@ -148,12 +149,12 @@ GitHub Actions should be automatically enabled. Verify:
 
 ## Step 10: Add Repository Badges
 
-The README.md already has the correct badges with your username (bofika). After your first release, you can add these additional badges:
+The README.md already has the correct badges. After your first release, you can add these additional badges:
 
 ```markdown
-[![GitHub release](https://img.shields.io/github/release/bofika/ibm-video-streaming-manager.svg)](https://github.com/bofika/ibm-video-streaming-manager/releases)
-[![GitHub issues](https://img.shields.io/github/issues/bofika/ibm-video-streaming-manager.svg)](https://github.com/bofika/ibm-video-streaming-manager/issues)
-[![GitHub stars](https://img.shields.io/github/stars/bofika/ibm-video-streaming-manager.svg)](https://github.com/bofika/ibm-video-streaming-manager/stargazers)
+[![GitHub release](https://img.shields.io/github/release/bofika/IBMVS.svg)](https://github.com/bofika/IBMVS/releases)
+[![GitHub issues](https://img.shields.io/github/issues/bofika/IBMVS.svg)](https://github.com/bofika/IBMVS/issues)
+[![GitHub stars](https://img.shields.io/github/stars/bofika/IBMVS.svg)](https://github.com/bofika/IBMVS/stargazers)
 ```
 
 ## Step 11: Set Up Project Board (Optional)
