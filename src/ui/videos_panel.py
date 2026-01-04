@@ -193,9 +193,16 @@ class VideosPanel(BasePanel):
         # Channel selector
         toolbar.addWidget(QLabel("Channel:"))
         self.channel_combo = QComboBox()
+        self.channel_combo.setMinimumWidth(300)
+        self.channel_combo.setMinimumHeight(30)
+        self.channel_combo.setMaxVisibleItems(15)
+        self.channel_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
+        self.channel_combo.setStyleSheet("QComboBox { padding: 5px; }")
         self.channel_combo.currentIndexChanged.connect(self.on_channel_changed)
-        self.load_channels()
         toolbar.addWidget(self.channel_combo)
+        
+        # Load channels after adding to layout
+        self.load_channels()
         
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Search videos...")
@@ -212,6 +219,33 @@ class VideosPanel(BasePanel):
         
         layout.addLayout(toolbar)
         
+        # Pagination controls
+        pagination_layout = QHBoxLayout()
+        pagination_layout.addWidget(QLabel("Videos per page:"))
+        
+        self.page_size_combo = QComboBox()
+        self.page_size_combo.addItems(["50", "100", "200"])
+        self.page_size_combo.setCurrentText("50")
+        self.page_size_combo.currentTextChanged.connect(self.on_page_size_changed)
+        pagination_layout.addWidget(self.page_size_combo)
+        
+        pagination_layout.addStretch()
+        
+        self.prev_page_btn = QPushButton("◀ Previous")
+        self.prev_page_btn.clicked.connect(self.load_previous_page)
+        self.prev_page_btn.setEnabled(False)
+        pagination_layout.addWidget(self.prev_page_btn)
+        
+        self.page_label = QLabel("Page 1")
+        pagination_layout.addWidget(self.page_label)
+        
+        self.next_page_btn = QPushButton("Next ▶")
+        self.next_page_btn.clicked.connect(self.load_next_page)
+        self.next_page_btn.setEnabled(False)
+        pagination_layout.addWidget(self.next_page_btn)
+        
+        layout.addLayout(pagination_layout)
+        
         # Videos table
         self.videos_table = QTableWidget()
         self.videos_table.setColumnCount(6)
@@ -222,6 +256,11 @@ class VideosPanel(BasePanel):
             1, QHeaderView.ResizeMode.Stretch
         )
         layout.addWidget(self.videos_table)
+        
+        # Pagination state
+        self.current_page = 1
+        self.total_pages = 1
+        self.page_size = 50
     
     def load_channels(self):
         """Load channels into combo box."""
@@ -229,27 +268,41 @@ class VideosPanel(BasePanel):
             response = channel_manager.list_channels()
             channels = response.get('channels', [])
             
-            self.channel_combo.clear()
-            for channel in channels:
-                self.channel_combo.addItem(
-                    channel.get('title', 'Untitled'),
-                    channel.get('id')
-                )
+            logger.info(f"Loading {len(channels)} channels into dropdown")
             
+            self.channel_combo.clear()
+            self.channel_combo.addItem("-- Select a Channel --", None)
+            
+            for channel in channels:
+                title = channel.get('title', 'Untitled')
+                channel_id = channel.get('id')
+                self.channel_combo.addItem(title, channel_id)
+                logger.debug(f"Added channel: {title} (ID: {channel_id})")
+            
+            logger.info(f"Dropdown now has {self.channel_combo.count()} items")
+            
+            # Don't auto-load videos, wait for user selection
             if channels:
-                self.current_channel_id = channels[0].get('id')
-                self.load_videos()
+                self.current_channel_id = None
         except Exception as e:
+            logger.error(f"Failed to load channels: {e}")
             self.show_error(f"Failed to load channels: {str(e)}")
     
     def on_channel_changed(self, index: int):
         """Handle channel selection change."""
-        if index >= 0:
+        if index > 0:  # Skip the "Select a Channel" option
             self.current_channel_id = self.channel_combo.currentData()
-            self.load_videos()
+            if self.current_channel_id:
+                logger.info(f"Channel changed to: {self.channel_combo.currentText()} (ID: {self.current_channel_id})")
+                self.load_videos()
+        elif index == 0:
+            # "Select a Channel" option selected
+            self.current_channel_id = None
+            if hasattr(self, 'videos_table'):
+                self.videos_table.setRowCount(0)
     
-    def load_videos(self):
-        """Load videos for selected channel."""
+    def load_videos(self, page: int = 1):
+        """Load videos for selected channel with pagination."""
         if not self.current_channel_id:
             return
         
@@ -258,8 +311,22 @@ class VideosPanel(BasePanel):
             return
         
         try:
-            response = video_manager.list_videos(self.current_channel_id)
+            self.current_page = page
+            response = video_manager.list_videos(
+                self.current_channel_id,
+                page=page,
+                page_size=self.page_size
+            )
             videos = response.get('videos', [])
+            paging = response.get('paging', {})
+            
+            # Update pagination info
+            self.total_pages = paging.get('page_count', 1)
+            total_items = paging.get('item_count', len(videos))
+            
+            self.page_label.setText(f"Page {self.current_page} of {self.total_pages} ({total_items} videos)")
+            self.prev_page_btn.setEnabled(self.current_page > 1)
+            self.next_page_btn.setEnabled(self.current_page < self.total_pages)
             
             self.videos_table.setRowCount(len(videos))
             
@@ -292,11 +359,26 @@ class VideosPanel(BasePanel):
                 edit_btn.clicked.connect(lambda checked, vid=video_id: self.edit_video(vid))
                 self.videos_table.setCellWidget(row, 5, edit_btn)
             
-            logger.info(f"Loaded {len(videos)} videos for channel {self.current_channel_id}")
+            logger.info(f"Loaded {len(videos)} videos for channel {self.current_channel_id} (page {page}/{self.total_pages})")
             
         except Exception as e:
             logger.error(f"Failed to load videos: {str(e)}")
             self.show_error(f"Failed to load videos: {str(e)}")
+    
+    def load_previous_page(self):
+        """Load previous page of videos."""
+        if self.current_page > 1:
+            self.load_videos(self.current_page - 1)
+    
+    def load_next_page(self):
+        """Load next page of videos."""
+        if self.current_page < self.total_pages:
+            self.load_videos(self.current_page + 1)
+    
+    def on_page_size_changed(self, size_text: str):
+        """Handle page size change."""
+        self.page_size = int(size_text)
+        self.load_videos(1)  # Reset to first page
     
     def search_videos(self, text: str):
         """Search videos."""
