@@ -14,6 +14,7 @@ from ui.base_panel import BasePanel
 from api.interactivity import interactivity_manager
 from api.channels import channel_manager
 from core.logger import get_logger
+from core.exceptions import NotFoundError
 
 logger = get_logger(__name__)
 
@@ -267,6 +268,10 @@ class InteractivePanel(BasePanel):
         if not self.current_channel_id:
             return
         
+        if not hasattr(self, 'chat_enabled_check'):
+            logger.warning("Chat settings UI not initialized yet")
+            return
+        
         try:
             settings = interactivity_manager.get_chat_settings(self.current_channel_id)
             
@@ -283,6 +288,8 @@ class InteractivePanel(BasePanel):
             
             logger.info(f"Loaded chat settings for channel {self.current_channel_id}")
             
+        except NotFoundError:
+            logger.warning(f"Chat settings not available for channel {self.current_channel_id}")
         except Exception as e:
             logger.error(f"Failed to load chat settings: {e}")
     
@@ -313,6 +320,10 @@ class InteractivePanel(BasePanel):
         if not self.current_channel_id:
             return
         
+        if not hasattr(self, 'polls_table'):
+            logger.warning("Polls table UI not initialized yet")
+            return
+        
         try:
             polls = interactivity_manager.list_polls(self.current_channel_id)
             
@@ -330,6 +341,9 @@ class InteractivePanel(BasePanel):
             
             logger.info(f"Loaded {len(polls)} polls for channel {self.current_channel_id}")
             
+        except NotFoundError:
+            logger.warning(f"Polls not available for channel {self.current_channel_id}")
+            self.polls_table.setRowCount(0)
         except Exception as e:
             logger.error(f"Failed to load polls: {e}")
     
@@ -374,6 +388,10 @@ class InteractivePanel(BasePanel):
         if not self.current_channel_id:
             return
         
+        if not hasattr(self, 'qa_enabled_check'):
+            logger.warning("Q&A settings UI not initialized yet")
+            return
+        
         try:
             settings = interactivity_manager.get_qa_settings(self.current_channel_id)
             
@@ -382,6 +400,8 @@ class InteractivePanel(BasePanel):
             
             logger.info(f"Loaded Q&A settings for channel {self.current_channel_id}")
             
+        except NotFoundError:
+            logger.warning(f"Q&A settings not available for channel {self.current_channel_id}")
         except Exception as e:
             logger.error(f"Failed to load Q&A settings: {e}")
     

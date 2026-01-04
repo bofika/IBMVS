@@ -13,6 +13,7 @@ from ui.base_panel import BasePanel
 from api.analytics import analytics_manager
 from api.channels import channel_manager
 from core.logger import get_logger
+from core.exceptions import NotFoundError
 from utils.helpers import format_number, time_ago
 
 logger = get_logger(__name__)
@@ -233,22 +234,33 @@ class MonitorPanel(BasePanel):
             viewers_data = analytics_manager.get_current_viewers(self.current_channel_id)
             
             current = viewers_data.get('current', 0)
-            self.viewers_label.setText(format_number(current))
+            if hasattr(self, 'viewers_label'):
+                self.viewers_label.setText(format_number(current))
             
             peak = viewers_data.get('peak_today', 0)
-            self.peak_label.setText(format_number(peak))
+            if hasattr(self, 'peak_label'):
+                self.peak_label.setText(format_number(peak))
             
             # Update stream URL
-            self.preview_url_label.setText(
-                f"Stream URL: https://video.ibm.com/channel/{self.current_channel_id}"
-            )
+            if hasattr(self, 'preview_url_label'):
+                self.preview_url_label.setText(
+                    f"Stream URL: https://video.ibm.com/channel/{self.current_channel_id}"
+                )
             
             logger.debug(f"Current viewers: {current}, Peak: {peak}")
             
         except Exception as e:
-            logger.error(f"Failed to load current stats: {e}")
-            self.viewers_label.setText("--")
-            self.peak_label.setText("--")
+            from api.exceptions import NotFoundError
+            if isinstance(e, NotFoundError):
+                logger.warning(f"Viewer stats not available for channel {self.current_channel_id}")
+            else:
+                logger.error(f"Failed to load current stats: {e}")
+            
+            # Safely update UI
+            if hasattr(self, 'viewers_label'):
+                self.viewers_label.setText("N/A")
+            if hasattr(self, 'peak_label'):
+                self.peak_label.setText("N/A")
     
     def load_stream_health(self):
         """Load stream health information."""
@@ -259,44 +271,62 @@ class MonitorPanel(BasePanel):
             health_data = analytics_manager.get_stream_health(self.current_channel_id)
             
             status = health_data.get('status', 'unknown')
-            self.health_label.setText(status.upper())
+            if hasattr(self, 'health_label'):
+                self.health_label.setText(status.upper())
             
             # Color code based on status
             if status == 'healthy':
-                self.health_label.setStyleSheet(
-                    "font-size: 24px; font-weight: bold; color: green;"
-                )
-                self.status_label.setText("Live")
-                self.status_label.setStyleSheet(
-                    "font-size: 24px; font-weight: bold; color: green;"
-                )
+                if hasattr(self, 'health_label'):
+                    self.health_label.setStyleSheet(
+                        "font-size: 24px; font-weight: bold; color: green;"
+                    )
+                if hasattr(self, 'status_label'):
+                    self.status_label.setText("Live")
+                    self.status_label.setStyleSheet(
+                        "font-size: 24px; font-weight: bold; color: green;"
+                    )
             elif status == 'warning':
-                self.health_label.setStyleSheet(
-                    "font-size: 24px; font-weight: bold; color: orange;"
-                )
-                self.status_label.setText("Live (Issues)")
-                self.status_label.setStyleSheet(
-                    "font-size: 24px; font-weight: bold; color: orange;"
-                )
+                if hasattr(self, 'health_label'):
+                    self.health_label.setStyleSheet(
+                        "font-size: 24px; font-weight: bold; color: orange;"
+                    )
+                if hasattr(self, 'status_label'):
+                    self.status_label.setText("Live (Issues)")
+                    self.status_label.setStyleSheet(
+                        "font-size: 24px; font-weight: bold; color: orange;"
+                    )
             else:
-                self.health_label.setStyleSheet(
-                    "font-size: 24px; font-weight: bold; color: gray;"
-                )
-                self.status_label.setText("Offline")
-                self.status_label.setStyleSheet(
-                    "font-size: 24px; font-weight: bold; color: gray;"
-                )
+                if hasattr(self, 'health_label'):
+                    self.health_label.setStyleSheet(
+                        "font-size: 24px; font-weight: bold; color: gray;"
+                    )
+                if hasattr(self, 'status_label'):
+                    self.status_label.setText("Offline")
+                    self.status_label.setStyleSheet(
+                        "font-size: 24px; font-weight: bold; color: gray;"
+                    )
             
             logger.debug(f"Stream health: {status}")
             
         except Exception as e:
-            logger.error(f"Failed to load stream health: {e}")
-            self.health_label.setText("--")
-            self.status_label.setText("Unknown")
+            from api.exceptions import NotFoundError
+            if isinstance(e, NotFoundError):
+                logger.warning(f"Stream health not available for channel {self.current_channel_id}")
+            else:
+                logger.error(f"Failed to load stream health: {e}")
+            
+            if hasattr(self, 'health_label'):
+                self.health_label.setText("N/A")
+            if hasattr(self, 'status_label'):
+                self.status_label.setText("Unknown")
     
     def load_analytics(self):
         """Load analytics metrics."""
         if not self.current_channel_id:
+            return
+        
+        if not hasattr(self, 'time_range_combo'):
+            logger.warning("Analytics UI not initialized yet")
             return
         
         try:
@@ -333,6 +363,8 @@ class MonitorPanel(BasePanel):
             
             logger.info(f"Loaded analytics for {range_text}")
             
+        except NotFoundError:
+            logger.warning(f"Analytics not available for channel {self.current_channel_id}")
         except Exception as e:
             logger.error(f"Failed to load analytics: {e}")
     

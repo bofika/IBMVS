@@ -253,6 +253,10 @@ class VideosPanel(BasePanel):
         if not self.current_channel_id:
             return
         
+        if not hasattr(self, 'videos_table'):
+            logger.warning("Videos table not initialized yet")
+            return
+        
         try:
             response = video_manager.list_videos(self.current_channel_id)
             videos = response.get('videos', [])
@@ -279,10 +283,14 @@ class VideosPanel(BasePanel):
             logger.info(f"Loaded {len(videos)} videos for channel {self.current_channel_id}")
             
         except Exception as e:
+            logger.error(f"Failed to load videos: {str(e)}")
             self.show_error(f"Failed to load videos: {str(e)}")
     
     def search_videos(self, text: str):
         """Search videos."""
+        if not hasattr(self, 'videos_table'):
+            return
+        
         for row in range(self.videos_table.rowCount()):
             title_item = self.videos_table.item(row, 1)
             if title_item:
