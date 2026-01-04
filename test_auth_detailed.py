@@ -1,30 +1,39 @@
 #!/usr/bin/env python3
 """
 Detailed authentication test with multiple methods.
+Usage: python3 test_auth_detailed.py [client_id] [client_secret]
 """
 import requests
-import keyring
 import base64
-import json
-
-SERVICE_NAME = "IBM_Video_Streaming_Manager"
-CLIENT_ID_USERNAME = "client_id"
-CLIENT_SECRET_USERNAME = "client_secret"
-
-client_id = keyring.get_password(SERVICE_NAME, CLIENT_ID_USERNAME)
-client_secret = keyring.get_password(SERVICE_NAME, CLIENT_SECRET_USERNAME)
+import sys
+import getpass
 
 print("=" * 70)
 print("IBM Video Streaming - Detailed Authentication Test")
 print("=" * 70)
 print()
 
+# Get credentials from command line or prompt
+if len(sys.argv) >= 3:
+    client_id = sys.argv[1]
+    client_secret = sys.argv[2]
+    print("Using credentials from command line arguments")
+else:
+    print("Enter your IBM Video Streaming OAuth credentials:")
+    print("(You can also pass them as: python3 test_auth_detailed.py CLIENT_ID CLIENT_SECRET)")
+    print()
+    client_id = input("Client ID: ").strip()
+    client_secret = getpass.getpass("Client Secret: ").strip()
+
 if not client_id or not client_secret:
-    print("❌ No credentials found in keyring")
+    print("❌ Both Client ID and Client Secret are required")
     exit(1)
 
+print()
 print(f"Client ID: {client_id[:10]}...{client_id[-10:]}")
+print(f"Client ID length: {len(client_id)} characters")
 print(f"Client Secret: {client_secret[:10]}...{client_secret[-10:]}")
+print(f"Client Secret length: {len(client_secret)} characters")
 print()
 
 TOKEN_URL = "https://video.ibm.com/oauth2/token"
@@ -56,6 +65,8 @@ try:
     print(f"Response: {response1.text}")
     if response1.status_code == 200:
         print("✅ SUCCESS!")
+        token_data = response1.json()
+        print(f"Access Token: {token_data.get('access_token', 'N/A')[:20]}...")
     else:
         print("❌ FAILED")
 except Exception as e:
@@ -93,6 +104,8 @@ try:
     print(f"Response: {response2.text}")
     if response2.status_code == 200:
         print("✅ SUCCESS!")
+        token_data = response2.json()
+        print(f"Access Token: {token_data.get('access_token', 'N/A')[:20]}...")
     else:
         print("❌ FAILED")
 except Exception as e:
@@ -126,6 +139,8 @@ try:
     print(f"Response: {response3.text}")
     if response3.status_code == 200:
         print("✅ SUCCESS!")
+        token_data = response3.json()
+        print(f"Access Token: {token_data.get('access_token', 'N/A')[:20]}...")
     else:
         print("❌ FAILED")
 except Exception as e:
@@ -160,6 +175,8 @@ try:
     print(f"Response: {response4.text}")
     if response4.status_code == 200:
         print("✅ SUCCESS!")
+        token_data = response4.json()
+        print(f"Access Token: {token_data.get('access_token', 'N/A')[:20]}...")
     else:
         print("❌ FAILED")
 except Exception as e:
@@ -195,6 +212,8 @@ try:
     print(f"Response: {response5.text}")
     if response5.status_code == 200:
         print("✅ SUCCESS!")
+        token_data = response5.json()
+        print(f"Access Token: {token_data.get('access_token', 'N/A')[:20]}...")
     else:
         print("❌ FAILED")
 except Exception as e:
@@ -204,5 +223,11 @@ print()
 print("=" * 70)
 print("Test Complete")
 print("=" * 70)
+print()
+print("If all tests failed, please verify:")
+print("1. Credentials are from video.ibm.com dashboard (not IBM Cloud)")
+print("2. API access is enabled for your account")
+print("3. Credentials haven't been revoked")
+print("4. You're using the correct credentials (not viewer auth)")
 
 # Made with Bob
