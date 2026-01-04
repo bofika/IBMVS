@@ -48,7 +48,7 @@ print()
 print("Step 2: Fetching channels...")
 print("-" * 70)
 
-API_BASE_URL = "https://api.video.ibm.com/v1"
+API_BASE_URL = "https://api.video.ibm.com"
 CHANNELS_URL = f"{API_BASE_URL}/users/self/channels.json"
 
 headers = {
