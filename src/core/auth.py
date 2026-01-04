@@ -152,7 +152,11 @@ class AuthManager:
             return False
         
         try:
-            logger.info("Requesting new access token...")
+            logger.info("=" * 60)
+            logger.info("Requesting new OAuth 2.0 access token...")
+            logger.info(f"Token URL: {self.TOKEN_URL}")
+            logger.info(f"Client ID: {self._client_id[:8]}...{self._client_id[-8:] if self._client_id and len(self._client_id) >= 16 else 'N/A'}")
+            logger.info(f"Client ID length: {len(self._client_id) if self._client_id else 0}")
             
             # Prepare token request
             data = {
@@ -166,13 +170,19 @@ class AuthManager:
                 'Content-Type': 'application/x-www-form-urlencoded'
             }
             
+            logger.debug(f"Request data keys: {list(data.keys())}")
+            
             # Request token
+            logger.info("Sending token request...")
             response = requests.post(
                 self.TOKEN_URL,
                 data=data,
                 headers=headers,
                 timeout=30
             )
+            
+            logger.info(f"Response status code: {response.status_code}")
+            logger.debug(f"Response headers: {dict(response.headers)}")
             
             if response.status_code == 200:
                 token_data = response.json()
@@ -183,17 +193,39 @@ class AuthManager:
                 # Set expiry time (subtract 5 minutes for safety)
                 self._token_expiry = datetime.now() + timedelta(seconds=expires_in - 300)
                 
-                logger.info(f"Access token obtained successfully (expires in {expires_in}s)")
+                logger.info(f"✓ Access token obtained successfully!")
+                logger.info(f"  Token type: {self._token_type}")
+                logger.info(f"  Expires in: {expires_in} seconds")
+                logger.info(f"  Token preview: {self._access_token[:20]}..." if self._access_token else "  No token received")
+                logger.info("=" * 60)
                 return True
             else:
-                logger.error(f"Token request failed: {response.status_code} - {response.text}")
+                logger.error("=" * 60)
+                logger.error(f"✗ Token request FAILED!")
+                logger.error(f"  Status code: {response.status_code}")
+                logger.error(f"  Response body: {response.text}")
+                logger.error("=" * 60)
+                
+                # Try to parse error details
+                try:
+                    error_data = response.json()
+                    logger.error(f"  Error details: {error_data}")
+                except:
+                    pass
+                
                 return False
                 
+        except requests.exceptions.Timeout:
+            logger.error("Token request timed out after 30 seconds")
+            return False
+        except requests.exceptions.ConnectionError as e:
+            logger.error(f"Connection error during token request: {e}")
+            return False
         except requests.exceptions.RequestException as e:
             logger.error(f"Network error during token request: {e}")
             return False
         except Exception as e:
-            logger.error(f"Unexpected error during token request: {e}")
+            logger.error(f"Unexpected error during token request: {e}", exc_info=True)
             return False
     
     def get_access_token(self) -> Optional[str]:
