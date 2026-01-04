@@ -44,6 +44,12 @@ class ChannelManager:
         logger.info(f"Fetching channels (page {page}, size {page_size})")
         response = self.client.get('/users/self/channels.json', params=params)
         
+        # Convert channels dict to list for easier handling
+        # IBM API returns channels as {channel_id: channel_data}
+        if 'channels' in response and isinstance(response['channels'], dict):
+            channels_list = list(response['channels'].values())
+            response['channels'] = channels_list
+        
         return response
     
     def get_channel(self, channel_id: str) -> Dict[str, Any]:
