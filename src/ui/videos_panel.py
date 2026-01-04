@@ -5,9 +5,11 @@ from PyQt6.QtWidgets import (
     QVBoxLayout, QHBoxLayout, QPushButton, QTableWidget,
     QTableWidgetItem, QHeaderView, QLineEdit, QLabel,
     QComboBox, QFileDialog, QProgressDialog, QDialog,
-    QFormLayout, QTextEdit, QDialogButtonBox, QMessageBox
+    QFormLayout, QTextEdit, QDialogButtonBox, QMessageBox,
+    QListView
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
+from PyQt6.QtGui import QStandardItemModel, QStandardItem
 
 from ui.base_panel import BasePanel
 from api.videos import video_manager
@@ -198,7 +200,33 @@ class VideosPanel(BasePanel):
         self.channel_combo.setMaxVisibleItems(15)
         self.channel_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
         
-        # Fix for macOS dark mode dropdown rendering
+        # Create and set a QListView for the dropdown popup
+        list_view = QListView()
+        list_view.setStyleSheet("""
+            QListView {
+                background-color: #2b2b2b;
+                color: white;
+                selection-background-color: #0d5aa7;
+                selection-color: white;
+                border: 1px solid #555;
+                padding: 2px;
+                outline: none;
+            }
+            QListView::item {
+                min-height: 30px;
+                padding: 5px;
+                border: none;
+            }
+            QListView::item:hover {
+                background-color: #3a3a3a;
+            }
+            QListView::item:selected {
+                background-color: #0d5aa7;
+            }
+        """)
+        self.channel_combo.setView(list_view)
+        
+        # Style the combo box itself
         self.channel_combo.setStyleSheet("""
             QComboBox {
                 padding: 5px;
@@ -216,18 +244,6 @@ class VideosPanel(BasePanel):
                 border-right: 5px solid transparent;
                 border-top: 5px solid white;
                 margin-right: 5px;
-            }
-            QComboBox QAbstractItemView {
-                background-color: #2b2b2b;
-                color: white;
-                selection-background-color: #0d5aa7;
-                selection-color: white;
-                border: 1px solid #555;
-                padding: 5px;
-            }
-            QComboBox QAbstractItemView::item {
-                min-height: 25px;
-                padding: 3px;
             }
         """)
         
