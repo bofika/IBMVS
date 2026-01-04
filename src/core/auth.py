@@ -22,10 +22,9 @@ class AuthManager:
     CLIENT_SECRET_USERNAME = "ibm_client_secret"
     
     # IBM Video Streaming OAuth endpoints
-    # Note: IBM Video Streaming uses a different authentication approach
-    # The token endpoint is at the API base URL
+    # Based on official documentation: https://developers.video.ibm.com/api-basics-authentication
     AUTH_URL = "https://authentication.video.ibm.com/authorize"
-    TOKEN_URL = "https://api.video.ibm.com/oauth2/token"
+    TOKEN_URL = "https://video.ibm.com/oauth2/token"
     API_BASE_URL = "https://api.video.ibm.com"
     
     def __init__(self):
@@ -160,11 +159,10 @@ class AuthManager:
             logger.info(f"Client ID: {self._client_id[:8]}...{self._client_id[-8:] if self._client_id and len(self._client_id) >= 16 else 'N/A'}")
             logger.info(f"Client ID length: {len(self._client_id) if self._client_id else 0}")
             
-            # Prepare token request
+            # Prepare token request data (as per IBM documentation)
             data = {
                 'grant_type': 'client_credentials',
                 'client_id': self._client_id,
-                'client_secret': self._client_secret,
                 'device_name': 'IBM Video Streaming Manager'
             }
             
@@ -173,13 +171,16 @@ class AuthManager:
             }
             
             logger.debug(f"Request data keys: {list(data.keys())}")
+            logger.info("Using HTTP Basic Auth with client_secret")
             
-            # Request token
+            # Request token with HTTP Basic authentication
+            # The client_secret is sent via HTTP Basic Auth header
             logger.info("Sending token request...")
             response = requests.post(
                 self.TOKEN_URL,
                 data=data,
                 headers=headers,
+                auth=(self._client_id, self._client_secret),  # HTTP Basic Auth
                 timeout=30
             )
             
