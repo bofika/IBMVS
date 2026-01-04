@@ -170,10 +170,13 @@ class AuthManager:
             logger.info(f"Client ID length: {len(self._client_id)}")
             logger.info(f"Client Secret length: {len(self._client_secret)}")
             
-            # Prepare token request data (as per IBM documentation)
+            # Prepare token request data
+            # NOTE: Despite IBM's documentation suggesting HTTP Basic Auth,
+            # the actual working method is to send client_secret in POST data
             data = {
                 'grant_type': 'client_credentials',
                 'client_id': self._client_id,
+                'client_secret': self._client_secret,  # Send in POST data, not Basic Auth
                 'device_name': 'IBM Video Streaming Manager'
             }
             
@@ -182,20 +185,14 @@ class AuthManager:
             }
             
             logger.debug(f"Request data keys: {list(data.keys())}")
-            logger.info("Using HTTP Basic Auth with client_secret")
+            logger.info("Sending client_secret in POST data (not Basic Auth)")
             
-            # Log the first/last few characters for debugging (safely)
-            logger.debug(f"Client ID starts with: {self._client_id[:8]}...")
-            logger.debug(f"Client Secret starts with: {self._client_secret[:8]}...")
-            
-            # Request token with HTTP Basic authentication
-            # The client_secret is sent via HTTP Basic Auth header
+            # Request token
             logger.info("Sending token request...")
             response = requests.post(
                 self.TOKEN_URL,
                 data=data,
                 headers=headers,
-                auth=(self._client_id, self._client_secret),  # HTTP Basic Auth
                 timeout=30
             )
             
