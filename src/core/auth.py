@@ -22,8 +22,10 @@ class AuthManager:
     CLIENT_SECRET_USERNAME = "ibm_client_secret"
     
     # IBM Video Streaming OAuth endpoints
+    # Note: IBM Video Streaming uses a different authentication approach
+    # The token endpoint is at the API base URL
     AUTH_URL = "https://authentication.video.ibm.com/authorize"
-    TOKEN_URL = "https://authentication.video.ibm.com/oauth2/token"
+    TOKEN_URL = "https://api.video.ibm.com/oauth2/token"
     API_BASE_URL = "https://api.video.ibm.com"
     
     def __init__(self):
