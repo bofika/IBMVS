@@ -197,7 +197,40 @@ class VideosPanel(BasePanel):
         self.channel_combo.setMinimumHeight(30)
         self.channel_combo.setMaxVisibleItems(15)
         self.channel_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
-        self.channel_combo.setStyleSheet("QComboBox { padding: 5px; }")
+        
+        # Fix for macOS dark mode dropdown rendering
+        self.channel_combo.setStyleSheet("""
+            QComboBox {
+                padding: 5px;
+                background-color: #2b2b2b;
+                color: white;
+                border: 1px solid #555;
+            }
+            QComboBox::drop-down {
+                border: none;
+                width: 20px;
+            }
+            QComboBox::down-arrow {
+                image: none;
+                border-left: 5px solid transparent;
+                border-right: 5px solid transparent;
+                border-top: 5px solid white;
+                margin-right: 5px;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #2b2b2b;
+                color: white;
+                selection-background-color: #0d5aa7;
+                selection-color: white;
+                border: 1px solid #555;
+                padding: 5px;
+            }
+            QComboBox QAbstractItemView::item {
+                min-height: 25px;
+                padding: 3px;
+            }
+        """)
+        
         self.channel_combo.currentIndexChanged.connect(self.on_channel_changed)
         toolbar.addWidget(self.channel_combo)
         
