@@ -70,19 +70,27 @@ class ChannelsPanel(BasePanel):
             self.channels_table.setRowCount(len(channels))
             
             for row, channel in enumerate(channels):
-                self.channels_table.setItem(row, 0, QTableWidgetItem(channel.get('id', '')))
+                channel_id = channel.get('id', '')
+                self.channels_table.setItem(row, 0, QTableWidgetItem(channel_id))
                 self.channels_table.setItem(row, 1, QTableWidgetItem(channel.get('title', '')))
                 self.channels_table.setItem(row, 2, QTableWidgetItem(channel.get('status', '')))
                 self.channels_table.setItem(row, 3, QTableWidgetItem(str(channel.get('viewer_count', 0))))
                 
                 # Actions buttons
-                actions_widget = QPushButton("Edit")
-                self.channels_table.setCellWidget(row, 4, actions_widget)
+                edit_btn = QPushButton("Edit")
+                edit_btn.clicked.connect(lambda checked, cid=channel_id: self.edit_channel(cid))
+                self.channels_table.setCellWidget(row, 4, edit_btn)
             
             logger.info(f"Loaded {len(channels)} channels")
             
         except Exception as e:
             self.show_error(f"Failed to load channels: {str(e)}")
+    
+    def edit_channel(self, channel_id: str):
+        """Edit a channel."""
+        # TODO: Show edit channel dialog
+        self.show_info(f"Edit channel dialog for channel {channel_id} - To be implemented")
+        logger.info(f"Edit channel requested: {channel_id}")
     
     def search_channels(self, text: str):
         """Search channels."""

@@ -264,21 +264,33 @@ class VideosPanel(BasePanel):
             self.videos_table.setRowCount(len(videos))
             
             for row, video in enumerate(videos):
-                self.videos_table.setItem(row, 0, QTableWidgetItem(video.get('id', '')))
-                self.videos_table.setItem(row, 1, QTableWidgetItem(video.get('title', '')))
+                video_id = video.get('id', '')
+                self.videos_table.setItem(row, 0, QTableWidgetItem(video_id))
+                self.videos_table.setItem(row, 1, QTableWidgetItem(video.get('title', 'Untitled')))
                 
-                duration = video.get('duration', 0)
-                self.videos_table.setItem(row, 2, QTableWidgetItem(format_duration(duration)))
+                # Handle duration - API returns 'length' as STRING
+                length_str = video.get('length', '0')
+                try:
+                    duration = float(length_str) if length_str else 0
+                    if duration > 0:
+                        self.videos_table.setItem(row, 2, QTableWidgetItem(format_duration(int(duration))))
+                    else:
+                        self.videos_table.setItem(row, 2, QTableWidgetItem("0:00"))
+                except (ValueError, TypeError):
+                    self.videos_table.setItem(row, 2, QTableWidgetItem("N/A"))
                 
+                # Handle views
                 views = video.get('views', 0)
                 self.videos_table.setItem(row, 3, QTableWidgetItem(str(views)))
                 
-                status = video.get('status', 'unknown')
-                self.videos_table.setItem(row, 4, QTableWidgetItem(status))
+                # Handle status - API returns 'protect' field (public/private)
+                protect = video.get('protect', 'unknown')
+                self.videos_table.setItem(row, 4, QTableWidgetItem(protect))
                 
                 # Actions buttons
-                actions_widget = QPushButton("Edit")
-                self.videos_table.setCellWidget(row, 5, actions_widget)
+                edit_btn = QPushButton("Edit")
+                edit_btn.clicked.connect(lambda checked, vid=video_id: self.edit_video(vid))
+                self.videos_table.setCellWidget(row, 5, edit_btn)
             
             logger.info(f"Loaded {len(videos)} videos for channel {self.current_channel_id}")
             
@@ -296,6 +308,12 @@ class VideosPanel(BasePanel):
             if title_item:
                 should_show = text.lower() in title_item.text().lower()
                 self.videos_table.setRowHidden(row, not should_show)
+    
+    def edit_video(self, video_id: str):
+        """Edit a video."""
+        # TODO: Show edit video dialog
+        self.show_info(f"Edit video dialog for video {video_id} - To be implemented")
+        logger.info(f"Edit video requested: {video_id}")
     
     def upload_video(self):
         """Upload a new video."""
