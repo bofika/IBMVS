@@ -156,8 +156,19 @@ class AuthManager:
             logger.info("=" * 60)
             logger.info("Requesting new OAuth 2.0 access token...")
             logger.info(f"Token URL: {self.TOKEN_URL}")
-            logger.info(f"Client ID: {self._client_id[:8]}...{self._client_id[-8:] if self._client_id and len(self._client_id) >= 16 else 'N/A'}")
-            logger.info(f"Client ID length: {len(self._client_id) if self._client_id else 0}")
+            
+            # Verify credentials are not None first
+            if not self._client_id or not self._client_secret:
+                logger.error("=" * 60)
+                logger.error("✗ Client credentials are missing!")
+                logger.error(f"  Client ID is None: {self._client_id is None}")
+                logger.error(f"  Client Secret is None: {self._client_secret is None}")
+                logger.error("=" * 60)
+                raise ValueError("Client credentials are not set")
+            
+            logger.info(f"Client ID: {self._client_id[:8]}...{self._client_id[-8:]}")
+            logger.info(f"Client ID length: {len(self._client_id)}")
+            logger.info(f"Client Secret length: {len(self._client_secret)}")
             
             # Prepare token request data (as per IBM documentation)
             data = {
@@ -172,6 +183,10 @@ class AuthManager:
             
             logger.debug(f"Request data keys: {list(data.keys())}")
             logger.info("Using HTTP Basic Auth with client_secret")
+            
+            # Log the first/last few characters for debugging (safely)
+            logger.debug(f"Client ID starts with: {self._client_id[:8]}...")
+            logger.debug(f"Client Secret starts with: {self._client_secret[:8]}...")
             
             # Request token with HTTP Basic authentication
             # The client_secret is sent via HTTP Basic Auth header
