@@ -104,19 +104,23 @@ Download the latest release for your platform:
 ### First-Time Setup
 
 1. Launch the application
-2. Go to **Settings** → **API Configuration**
-3. Enter your IBM Video Streaming API credentials:
-   - API Key
-   - API Secret
-4. Click **Save** and **Test Connection**
+2. Go to **Settings** → **OAuth 2.0 Credentials**
+3. Enter your IBM Video Streaming OAuth 2.0 credentials:
+   - Client ID (40-character string)
+   - Client Secret
+4. Click **Test Connection** to verify
+5. Click **OK** to save
 
-### API Credentials
+### Obtaining OAuth 2.0 Credentials
 
-To obtain API credentials:
+To obtain OAuth 2.0 credentials:
 1. Log in to your IBM Video Streaming account
 2. Navigate to **Dashboard** → **API/Channel Settings**
-3. Generate new API credentials
-4. Copy the API key and secret
+3. Create new **OAuth 2.0 client credentials**
+4. Copy the Client ID (40-character string) and Client Secret
+5. Keep these credentials secure - they provide full access to your account
+
+**Note**: The application uses OAuth 2.0 Client Credentials flow for authentication. Access tokens are automatically managed and refreshed as needed.
 
 ## Usage
 
