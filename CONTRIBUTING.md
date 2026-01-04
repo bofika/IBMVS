@@ -73,6 +73,8 @@ This project adheres to a code of conduct that all contributors are expected to 
    python src/main.py
    ```
 
+**Note for macOS**: If you get "python: command not found", use `python3` for all commands.
+
 ## How to Contribute
 
 ### Types of Contributions

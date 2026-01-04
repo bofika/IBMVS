@@ -70,12 +70,12 @@ cd IBMVS
 
 2. Create a virtual environment:
 ```bash
-python -m venv venv
-
 # On macOS/Linux:
+python3 -m venv venv
 source venv/bin/activate
 
 # On Windows:
+python -m venv venv
 venv\Scripts\activate
 ```
 
@@ -86,6 +86,10 @@ pip install -r requirements.txt
 
 4. Run the application:
 ```bash
+# On macOS/Linux (after activating venv):
+python src/main.py
+
+# On Windows:
 python src/main.py
 ```
 
@@ -219,23 +223,84 @@ pyinstaller --windowed --name "IBM Video Manager" ^
   src/main.py
 ```
 
+For comprehensive troubleshooting, see **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)**
+
 ## Troubleshooting
 
 ### Common Issues
 
-**Issue**: "Failed to connect to API"
+#### "python: command not found" (macOS)
+**Problem**: macOS uses `python3` instead of `python`
+
+**Solution**:
+```bash
+# Use python3 for all commands
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python src/main.py  # After activation, 'python' works
+```
+
+**Alternative**: Create an alias in `~/.zshrc`:
+```bash
+echo 'alias python=python3' >> ~/.zshrc
+echo 'alias pip=pip3' >> ~/.zshrc
+source ~/.zshrc
+```
+
+#### Python Not Installed (macOS)
+**Solution**: Install via Homebrew:
+```bash
+# Install Homebrew
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Install Python 3
+brew install python3
+```
+
+#### "Failed to connect to API"
 - **Solution**: Verify your API credentials in Settings
 - Check your internet connection
 - Ensure API endpoints are accessible
 
-**Issue**: "VLC player not found"
+#### "VLC player not found"
 - **Solution**: Install VLC Media Player from https://www.videolan.org/
 - Ensure VLC is in your system PATH
 
-**Issue**: "Video upload fails"
+#### "Video upload fails"
 - **Solution**: Check video format compatibility
 - Verify file size limits
 - Ensure sufficient disk space
+
+#### PyQt6 Installation Issues
+**macOS**: If you get compilation errors:
+```bash
+pip install --upgrade pip setuptools wheel
+pip install PyQt6
+```
+
+**Windows**: Ensure you have Visual C++ redistributables installed
+
+#### Permission Denied Errors
+**macOS/Linux**:
+```bash
+chmod +x src/main.py
+```
+
+#### Virtual Environment Activation Issues
+**macOS/Linux**: If `source venv/bin/activate` fails:
+```bash
+# Try with explicit path
+. ./venv/bin/activate
+
+# Or use full path
+source /full/path/to/venv/bin/activate
+```
+
+**Windows**: If activation is blocked by execution policy:
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
 
 ### Logs
 

@@ -8,6 +8,38 @@ This is a simplified guide to get your IBM Video Streaming Manager project on Gi
 
 ## Step-by-Step Instructions
 
+### 1. Check Python Installation
+```bash
+# On macOS, use python3
+python3 --version
+
+# If not installed, install via Homebrew:
+# brew install python3
+```
+
+### 2. Create Virtual Environment
+```bash
+# On macOS/Linux
+python3 -m venv venv
+source venv/bin/activate
+
+# On Windows
+python -m venv venv
+venv\Scripts\activate
+```
+
+### 3. Install Dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Run the Application
+```bash
+python src/main.py
+```
+
+## Git Setup (Already Done)
+
 ### 1. Initialize Git (if not already done)
 ```bash
 git init
@@ -67,7 +99,53 @@ On your repository page at https://github.com/bofika/IBMVS:
 
 ## Troubleshooting
 
-### Authentication Error?
+### "python: command not found" (macOS)
+**Solution**: Use `python3` instead:
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python src/main.py
+```
+
+### Python Not Installed
+**macOS**:
+```bash
+# Install Homebrew first
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Then install Python
+brew install python3
+```
+
+**Windows**: Download from https://www.python.org/downloads/
+
+### PyQt6 Installation Fails
+```bash
+# Upgrade pip first
+pip install --upgrade pip setuptools wheel
+
+# Then try again
+pip install -r requirements.txt
+```
+
+### Virtual Environment Won't Activate
+**macOS/Linux**:
+```bash
+# Try with dot command
+. ./venv/bin/activate
+
+# Or use full path
+source $(pwd)/venv/bin/activate
+```
+
+**Windows** (PowerShell execution policy):
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+venv\Scripts\activate
+```
+
+### Git Authentication Error
 If you get an authentication error, you need a Personal Access Token:
 1. Go to: https://github.com/settings/tokens
 2. Click "Generate new token (classic)"

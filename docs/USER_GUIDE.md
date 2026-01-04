@@ -34,18 +34,18 @@ IBM Video Streaming Manager is a desktop application that allows you to manage y
 
 3. **Clone or Download the Application**
    ```bash
-   git clone https://github.com/yourusername/ibm-video-manager.git
-   cd ibm-video-manager
+   git clone https://github.com/bofika/IBMVS.git
+   cd IBMVS
    ```
 
 4. **Create Virtual Environment**
    ```bash
-   python -m venv venv
-   
    # On macOS/Linux:
+   python3 -m venv venv
    source venv/bin/activate
    
    # On Windows:
+   python -m venv venv
    venv\Scripts\activate
    ```
 
@@ -58,6 +58,8 @@ IBM Video Streaming Manager is a desktop application that allows you to manage y
    ```bash
    python src/main.py
    ```
+
+**Note for macOS users**: If you get "python: command not found", use `python3` instead of `python` in step 4.
 
 ### Method 2: Pre-built Installer (Coming Soon)
 
