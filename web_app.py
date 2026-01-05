@@ -76,20 +76,87 @@ def api_channel_details(channel_id):
 # API Routes - Videos
 @app.route('/api/channels/<channel_id>/videos')
 def api_videos(channel_id):
-    """Get list of videos for a channel."""
+    """Get list of videos for a channel with smart pagination."""
     try:
         page = request.args.get('page', 1, type=int)
         page_size = request.args.get('page_size', 50, type=int)
         search = request.args.get('search', None)
         
-        response = video_manager.list_videos(
-            channel_id,
-            page=page,
-            page_size=page_size,
-            search_query=search,
-            include_private=True
-        )
-        return jsonify(response)
+        # IBM API has a hard limit of 50 videos per request
+        # If user wants more, we need to make multiple requests
+        IBM_API_MAX_PAGE_SIZE = 50
+        
+        if page_size <= IBM_API_MAX_PAGE_SIZE:
+            # Single request is enough
+            response = video_manager.list_videos(
+                channel_id,
+                page=page,
+                page_size=page_size,
+                search_query=search,
+                include_private=True
+            )
+            return jsonify(response)
+        else:
+            # Need multiple requests to fetch all videos
+            # Calculate how many API calls we need
+            num_requests = (page_size + IBM_API_MAX_PAGE_SIZE - 1) // IBM_API_MAX_PAGE_SIZE
+            
+            # Calculate which IBM API pages we need to fetch
+            # For example: if user wants page 1 with 200 videos per page,
+            # we need IBM API pages 1, 2, 3, 4 (each with 50 videos)
+            start_api_page = ((page - 1) * page_size) // IBM_API_MAX_PAGE_SIZE + 1
+            
+            all_videos = []
+            total_count = 0
+            paging_info = {}
+            
+            logger.info(f"Fetching {page_size} videos for page {page}: making {num_requests} API calls starting from API page {start_api_page}")
+            
+            for i in range(num_requests):
+                api_page = start_api_page + i
+                try:
+                    response = video_manager.list_videos(
+                        channel_id,
+                        page=api_page,
+                        page_size=IBM_API_MAX_PAGE_SIZE,
+                        search_query=search,
+                        include_private=True
+                    )
+                    
+                    videos = response.get('videos', [])
+                    all_videos.extend(videos)
+                    
+                    # Get total count from first response
+                    if i == 0:
+                        paging_info = response.get('paging', {})
+                        total_count = paging_info.get('total', 0)
+                    
+                    # Stop if we got fewer videos than requested (last page)
+                    if len(videos) < IBM_API_MAX_PAGE_SIZE:
+                        break
+                        
+                except Exception as e:
+                    logger.error(f"Error fetching API page {api_page}: {e}")
+                    # Continue with what we have
+                    break
+            
+            # Trim to exact page size if we got more
+            all_videos = all_videos[:page_size]
+            
+            # Build response in same format as single request
+            combined_response = {
+                'videos': all_videos,
+                'paging': {
+                    'total': total_count,
+                    'page': page,
+                    'pagesize': page_size,
+                    'actual_count': len(all_videos)
+                }
+            }
+            
+            logger.info(f"Combined response: {len(all_videos)} videos out of {total_count} total")
+            return jsonify(combined_response)
+            
     except Exception as e:
         logger.error(f"Error fetching videos for channel {channel_id}: {e}")
         return jsonify({'error': str(e)}), 500

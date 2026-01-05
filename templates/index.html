@@ -282,15 +282,24 @@ function loadVideos() {
             
             const videos = response.videos || [];
             const paging = response.paging || {};
-            const total = paging.total || videos.length;
             
+            // Use the total from paging info (this is the actual total count from API)
+            const total = paging.total || 0;
+            const actualCount = paging.actual_count || videos.length;
+            
+            // Calculate total pages based on the actual total count
             totalPages = Math.max(1, Math.ceil(total / pageSize));
             
-            // Update pagination info
-            document.getElementById('pagination-info').textContent = 
-                `Page ${currentPage} of ${totalPages} (${total} videos)`;
+            // Update pagination info with more details
+            const startNum = total > 0 ? ((currentPage - 1) * pageSize) + 1 : 0;
+            const endNum = Math.min(currentPage * pageSize, total);
+            
+            document.getElementById('pagination-info').textContent =
+                `Showing ${startNum}-${endNum} of ${total} videos (Page ${currentPage} of ${totalPages})`;
+            
+            // Enable/disable pagination buttons
             document.getElementById('prev-page-btn').disabled = currentPage <= 1;
-            document.getElementById('next-page-btn').disabled = currentPage >= totalPages;
+            document.getElementById('next-page-btn').disabled = currentPage >= totalPages || total === 0;
             
             // Update table
             const tbody = document.getElementById('videos-table-body');
