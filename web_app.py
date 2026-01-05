@@ -2,6 +2,11 @@
 Flask web application for IBM Video Streaming Manager.
 """
 import os
+import sys
+
+# Add src directory to Python path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+
 from flask import Flask, render_template, jsonify, request, session, redirect, url_for
 from flask_cors import CORS
 
