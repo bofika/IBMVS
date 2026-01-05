@@ -72,9 +72,19 @@ class VideoManager:
             Video details
         """
         logger.info(f"Fetching video details: {video_id}")
-        response = self.client.get(f'/videos/{video_id}.json')
+        # Use detail_level=owner to get full details including protect field
+        response = self.client.get(f'/videos/{video_id}.json', params={'detail_level': 'owner'})
         
-        return response.get('video', {})
+        logger.debug(f"Video {video_id} raw response: {response}")
+        
+        # The response structure is {'video': {...}}
+        video_data = response.get('video', {})
+        
+        # Log the protect field specifically
+        protect_status = video_data.get('protect', 'NOT_FOUND')
+        logger.info(f"Video {video_id} protect field: {protect_status}")
+        
+        return video_data
     
     def upload_video(
         self,
@@ -235,22 +245,24 @@ class VideoManager:
             json={'protect': protection_value}
         )
         
-        logger.info(f"API Response: {response}")
+        logger.info(f"PUT API Response type: {type(response)}, value: {response}")
         
-        # Verify the change by fetching the video details
+        # Verify the change by fetching the video details with owner detail level
         video_details = self.get_video(video_id)
-        actual_protection = video_details.get('video', {}).get('protect', 'unknown')
+        actual_protection = video_details.get('protect', 'unknown')
         
         logger.info(f"Video {video_id} protection status after update: {actual_protection}")
         
         if actual_protection != protection_value:
             logger.warning(f"Protection status mismatch! Expected: {protection_value}, Got: {actual_protection}")
+        else:
+            logger.info(f"✓ Protection status successfully changed to: {actual_protection}")
         
         return {
             'success': True,
             'requested_status': protection_value,
             'actual_status': actual_protection,
-            'video': video_details.get('video', {})
+            'video': video_details
         }
     
     def get_video_thumbnail(self, video_id: str) -> str:
