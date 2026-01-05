@@ -347,6 +347,21 @@ function loadVideos() {
 // Toggle video status
 function toggleVideoStatus(videoId, isCurrentlyPublic) {
     const makePrivate = isCurrentlyPublic;
+    const newStatus = makePrivate ? 'private' : 'public';
+    
+    // Find the button and show loading state
+    const button = event.target;
+    const originalText = button.textContent;
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Updating...';
+    
+    // Optimistically update the status cell
+    const row = document.getElementById(`video-row-${videoId}`);
+    const statusCell = row.querySelector('td:nth-child(5)');
+    const originalStatusText = statusCell.textContent;
+    const originalStatusClass = statusCell.className;
+    statusCell.textContent = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+    statusCell.className = makePrivate ? 'status-private' : 'status-public';
     
     $.ajax({
         url: `/api/videos/${videoId}/protection`,
@@ -354,12 +369,30 @@ function toggleVideoStatus(videoId, isCurrentlyPublic) {
         contentType: 'application/json',
         data: JSON.stringify({ is_private: makePrivate }),
         success: function(response) {
-            showAlert(`Video status changed to ${makePrivate ? 'private' : 'public'}`, 'success');
-            // Reload videos after a short delay
-            setTimeout(() => loadVideos(), 1000);
+            // Check if status actually changed
+            if (response.status_changed) {
+                showAlert(`✓ Video is now ${response.actual_status}`, 'success');
+                // Update button
+                button.textContent = makePrivate ? 'Make Public' : 'Make Private';
+                button.className = makePrivate ? 'btn btn-success btn-sm' : 'btn btn-warning btn-sm';
+                button.disabled = false;
+                button.onclick = function() { toggleVideoStatus(videoId, !makePrivate); };
+            } else {
+                // Revert if change failed
+                showAlert(`⚠ Status change failed. Video remains ${response.actual_status}`, 'warning');
+                statusCell.textContent = originalStatusText;
+                statusCell.className = originalStatusClass;
+                button.textContent = originalText;
+                button.disabled = false;
+            }
         },
         error: function(xhr) {
+            // Revert on error
             showAlert('Error updating video status: ' + (xhr.responseJSON?.error || 'Unknown error'), 'danger');
+            statusCell.textContent = originalStatusText;
+            statusCell.className = originalStatusClass;
+            button.textContent = originalText;
+            button.disabled = false;
         }
     });
 }
