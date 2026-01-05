@@ -430,6 +430,9 @@ class VideosPanel(BasePanel):
             self.prev_page_btn.setEnabled(self.current_page > 1)
             self.next_page_btn.setEnabled(self.current_page < self.total_pages)
             
+            # Clear table completely before repopulating
+            self.videos_table.clearContents()
+            self.videos_table.setRowCount(0)
             self.videos_table.setRowCount(len(videos))
             
             for row, video in enumerate(videos):
@@ -472,6 +475,12 @@ class VideosPanel(BasePanel):
                 self.videos_table.setCellWidget(row, 6, toggle_btn)
             
             logger.info(f"Loaded {len(videos)} videos for channel {self.current_channel_id} (page {page}/{self.total_pages})")
+            
+            # Force UI update
+            viewport = self.videos_table.viewport()
+            if viewport:
+                viewport.update()
+            self.videos_table.update()
             
         except Exception as e:
             logger.error(f"Failed to load videos: {str(e)}")
