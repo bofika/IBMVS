@@ -430,7 +430,16 @@ class VideosPanel(BasePanel):
             self.prev_page_btn.setEnabled(self.current_page > 1)
             self.next_page_btn.setEnabled(self.current_page < self.total_pages)
             
-            # Clear table completely before repopulating
+            # Aggressively clear table - remove all widgets and items
+            for row in range(self.videos_table.rowCount()):
+                # Remove all cell widgets (buttons)
+                for col in range(self.videos_table.columnCount()):
+                    widget = self.videos_table.cellWidget(row, col)
+                    if widget:
+                        self.videos_table.removeCellWidget(row, col)
+                        widget.deleteLater()
+            
+            # Now clear contents and reset row count
             self.videos_table.clearContents()
             self.videos_table.setRowCount(0)
             self.videos_table.setRowCount(len(videos))
@@ -476,11 +485,23 @@ class VideosPanel(BasePanel):
             
             logger.info(f"Loaded {len(videos)} videos for channel {self.current_channel_id} (page {page}/{self.total_pages})")
             
-            # Force UI update
+            # Force complete UI refresh using multiple methods
+            from PyQt6.QtWidgets import QApplication
+            
+            # Process all pending events first
+            QApplication.processEvents()
+            
+            # Force table to repaint
+            self.videos_table.reset()
+            self.videos_table.repaint()
+            
+            # Update viewport
             viewport = self.videos_table.viewport()
             if viewport:
-                viewport.update()
-            self.videos_table.update()
+                viewport.repaint()
+            
+            # Process events again to ensure rendering
+            QApplication.processEvents()
             
         except Exception as e:
             logger.error(f"Failed to load videos: {str(e)}")
