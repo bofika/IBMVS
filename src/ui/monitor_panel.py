@@ -1,12 +1,12 @@
 """
 Stream monitoring and analytics panel.
 """
-from PyQt6.QtWidgets import (
+from PySide6.QtWidgets import (
     QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
     QComboBox, QGroupBox, QWidget, QSplitter,
     QTableWidget, QTableWidgetItem
 )
-from PyQt6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QTimer
 from datetime import datetime, timedelta
 
 from ui.base_panel import BasePanel

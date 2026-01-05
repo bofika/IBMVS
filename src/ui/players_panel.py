@@ -1,13 +1,13 @@
 """
 Player configuration panel.
 """
-from PyQt6.QtWidgets import (
+from PySide6.QtWidgets import (
     QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
     QComboBox, QFormLayout, QGroupBox, QCheckBox,
     QLineEdit, QTextEdit, QSpinBox, QColorDialog
 )
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QColor
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor
 
 from ui.base_panel import BasePanel
 from api.players import player_manager
@@ -296,7 +296,7 @@ class PlayersPanel(BasePanel):
     
     def copy_embed_code(self):
         """Copy embed code to clipboard."""
-        from PyQt6.QtWidgets import QApplication
+        from PySide6.QtWidgets import QApplication
         
         embed_code = self.embed_code_text.toPlainText()
         if embed_code:

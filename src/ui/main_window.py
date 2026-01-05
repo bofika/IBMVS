@@ -1,13 +1,13 @@
 """
 Main application window.
 """
-from PyQt6.QtWidgets import (
+from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QStackedWidget, QListWidget, QMenuBar, QStatusBar,
     QMessageBox, QLabel, QListWidgetItem
 )
-from PyQt6.QtCore import Qt, QSize
-from PyQt6.QtGui import QAction, QIcon
+from PySide6.QtCore import Qt, QSize
+from PySide6.QtGui import QAction, QIcon
 
 from core.logger import get_logger
 from core.config import config

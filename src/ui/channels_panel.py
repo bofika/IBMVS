@@ -1,11 +1,11 @@
 """
 Channels management panel.
 """
-from PyQt6.QtWidgets import (
+from PySide6.QtWidgets import (
     QVBoxLayout, QHBoxLayout, QPushButton, QTableWidget,
     QTableWidgetItem, QHeaderView, QLineEdit, QLabel
 )
-from PyQt6.QtCore import Qt
+from PySide6.QtCore import Qt
 
 from ui.base_panel import BasePanel
 from api.channels import channel_manager

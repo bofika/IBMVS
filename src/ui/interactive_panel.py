@@ -1,14 +1,14 @@
 """
 Interactive features panel (chat, polls, Q&A).
 """
-from PyQt6.QtWidgets import (
+from PySide6.QtWidgets import (
     QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
     QComboBox, QGroupBox, QCheckBox, QSpinBox,
     QTableWidget, QTableWidgetItem, QHeaderView,
     QDialog, QFormLayout, QLineEdit, QDialogButtonBox,
     QListWidget, QTextEdit
 )
-from PyQt6.QtCore import Qt
+from PySide6.QtCore import Qt
 
 from ui.base_panel import BasePanel
 from api.interactivity import interactivity_manager
@@ -88,7 +88,7 @@ class CreatePollDialog(QDialog):
     def add_option(self, text: str = ""):
         """Add a poll option."""
         if self.options_list.count() >= 10:
-            from PyQt6.QtWidgets import QMessageBox
+            from PySide6.QtWidgets import QMessageBox
             QMessageBox.warning(self, "Limit Reached", "Maximum 10 options allowed.")
             return
         

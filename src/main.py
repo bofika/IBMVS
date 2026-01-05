@@ -2,8 +2,8 @@
 IBM Video Streaming Manager - Main Application Entry Point
 """
 import sys
-from PyQt6.QtWidgets import QApplication
-from PyQt6.QtCore import Qt
+from PySide6.QtWidgets import QApplication
+from PySide6.QtCore import Qt
 
 from core.logger import get_logger
 from core.config import config

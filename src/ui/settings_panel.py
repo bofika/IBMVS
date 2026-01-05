@@ -1,7 +1,7 @@
 """
 Settings and preferences panel.
 """
-from PyQt6.QtWidgets import (
+from PySide6.QtWidgets import (
     QVBoxLayout, QFormLayout, QLineEdit, QPushButton,
     QGroupBox, QDialog, QDialogButtonBox, QLabel
 )
@@ -107,7 +107,7 @@ class CredentialsDialog(QDialog):
         client_secret = self.client_secret_input.text().strip()
         
         if not client_id or not client_secret:
-            from PyQt6.QtWidgets import QMessageBox
+            from PySide6.QtWidgets import QMessageBox
             QMessageBox.warning(
                 self,
                 "Invalid Input",
@@ -117,7 +117,7 @@ class CredentialsDialog(QDialog):
         
         # Validate client ID length (should be 40 characters)
         if len(client_id) != 40:
-            from PyQt6.QtWidgets import QMessageBox
+            from PySide6.QtWidgets import QMessageBox
             QMessageBox.warning(
                 self,
                 "Invalid Client ID",
@@ -129,7 +129,7 @@ class CredentialsDialog(QDialog):
         if auth_manager.set_credentials(client_id, client_secret, save=True):
             self.accept()
         else:
-            from PyQt6.QtWidgets import QMessageBox
+            from PySide6.QtWidgets import QMessageBox
             QMessageBox.critical(
                 self,
                 "Error",
@@ -218,7 +218,7 @@ class SettingsPanel(BasePanel):
     
     def test_connection(self):
         """Test API connection."""
-        from PyQt6.QtWidgets import QMessageBox
+        from PySide6.QtWidgets import QMessageBox
         
         success, message = auth_manager.test_connection()
         
@@ -237,7 +237,7 @@ class SettingsPanel(BasePanel):
     
     def clear_credentials(self):
         """Clear stored credentials."""
-        from PyQt6.QtWidgets import QMessageBox
+        from PySide6.QtWidgets import QMessageBox
         
         reply = QMessageBox.question(
             self,

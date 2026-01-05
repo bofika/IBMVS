@@ -1,14 +1,14 @@
 """
 Videos management panel.
 """
-from PyQt6.QtWidgets import (
+from PySide6.QtWidgets import (
     QVBoxLayout, QHBoxLayout, QPushButton, QTableWidget,
     QTableWidgetItem, QHeaderView, QLineEdit, QLabel,
     QComboBox, QFileDialog, QProgressDialog, QDialog,
     QFormLayout, QTextEdit, QDialogButtonBox, QMessageBox,
     QListWidget, QListWidgetItem
 )
-from PyQt6.QtCore import Qt, QThread, pyqtSignal
+from PySide6.QtCore import Qt, QThread, Signal
 
 from ui.base_panel import BasePanel
 from api.videos import video_manager
@@ -22,9 +22,9 @@ logger = get_logger(__name__)
 class VideoUploadThread(QThread):
     """Thread for uploading videos."""
     
-    progress = pyqtSignal(int, int)  # current, total
-    finished = pyqtSignal(dict)  # video data
-    error = pyqtSignal(str)  # error message
+    progress = Signal(int, int)  # current, total
+    finished = Signal(dict)  # video data
+    error = Signal(str)  # error message
     
     def __init__(self, channel_id: str, file_path: str, title: str, 
                  description: str, tags: list):
@@ -531,8 +531,8 @@ class VideosPanel(BasePanel):
             logger.info(f"Loaded {len(videos)} videos for channel {self.current_channel_id} (page {page}/{self.total_pages})")
             
             # Force complete repaint by hiding and showing table
-            from PyQt6.QtWidgets import QApplication
-            from PyQt6.QtCore import QTimer
+            from PySide6.QtWidgets import QApplication
+            from PySide6.QtCore import QTimer
             
             # Hide table
             self.videos_table.hide()
@@ -595,7 +595,7 @@ class VideosPanel(BasePanel):
             self.show_success(f"Video status changed to {status_text}")
             
             # Add a small delay to allow API to propagate the change
-            from PyQt6.QtCore import QTimer
+            from PySide6.QtCore import QTimer
             QTimer.singleShot(1000, lambda: self.load_videos(self.current_page))
             
         except Exception as e:

@@ -1,8 +1,8 @@
 """
 Base panel class for all UI panels.
 """
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel
-from PyQt6.QtCore import Qt
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel
+from PySide6.QtCore import Qt
 
 from core.logger import get_logger
 
@@ -39,7 +39,7 @@ class BasePanel(QWidget):
         Args:
             message: Error message
         """
-        from PyQt6.QtWidgets import QMessageBox
+        from PySide6.QtWidgets import QMessageBox
         QMessageBox.critical(self, "Error", message)
         logger.error(f"{self.title} panel error: {message}")
     
@@ -50,7 +50,7 @@ class BasePanel(QWidget):
         Args:
             message: Info message
         """
-        from PyQt6.QtWidgets import QMessageBox
+        from PySide6.QtWidgets import QMessageBox
         QMessageBox.information(self, "Information", message)
     
     def show_success(self, message: str):
@@ -60,7 +60,7 @@ class BasePanel(QWidget):
         Args:
             message: Success message
         """
-        from PyQt6.QtWidgets import QMessageBox
+        from PySide6.QtWidgets import QMessageBox
         QMessageBox.information(self, "Success", message)
 
 # Made with Bob
