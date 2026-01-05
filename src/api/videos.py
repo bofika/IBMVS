@@ -239,10 +239,11 @@ class VideoManager:
         protection_value = 'private' if is_private else 'public'
         logger.info(f"Setting video {video_id} protection to: {protection_value}")
         
-        # Send PUT request with protect parameter
+        # Try sending as form data instead of JSON
+        logger.info(f"Sending PUT request with data={'protect': '{protection_value}'}")
         response = self.client.put(
             f'/videos/{video_id}.json',
-            json={'protect': protection_value}
+            data={'protect': protection_value}
         )
         
         logger.info(f"PUT API Response type: {type(response)}, value: {response}")
