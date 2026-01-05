@@ -240,7 +240,7 @@ class VideoManager:
         logger.info(f"Setting video {video_id} protection to: {protection_value}")
         
         # Try sending as form data instead of JSON
-        logger.info(f"Sending PUT request with data={'protect': '{protection_value}'}")
+        logger.info(f"Sending PUT request with data={{'protect': '{protection_value}'}}")
         response = self.client.put(
             f'/videos/{video_id}.json',
             data={'protect': protection_value}
