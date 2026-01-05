@@ -430,77 +430,120 @@ class VideosPanel(BasePanel):
             self.prev_page_btn.setEnabled(self.current_page > 1)
             self.next_page_btn.setEnabled(self.current_page < self.total_pages)
             
-            # Aggressively clear table - remove all widgets and items
-            for row in range(self.videos_table.rowCount()):
-                # Remove all cell widgets (buttons)
-                for col in range(self.videos_table.columnCount()):
-                    widget = self.videos_table.cellWidget(row, col)
-                    if widget:
-                        self.videos_table.removeCellWidget(row, col)
-                        widget.deleteLater()
+            # Disable updates during modification
+            self.videos_table.setUpdatesEnabled(False)
             
-            # Now clear contents and reset row count
-            self.videos_table.clearContents()
-            self.videos_table.setRowCount(0)
-            self.videos_table.setRowCount(len(videos))
+            # Adjust row count if needed
+            current_rows = self.videos_table.rowCount()
+            needed_rows = len(videos)
             
+            if current_rows > needed_rows:
+                # Remove extra rows
+                for row in range(needed_rows, current_rows):
+                    for col in range(self.videos_table.columnCount()):
+                        widget = self.videos_table.cellWidget(row, col)
+                        if widget:
+                            self.videos_table.removeCellWidget(row, col)
+                            widget.deleteLater()
+                self.videos_table.setRowCount(needed_rows)
+            elif current_rows < needed_rows:
+                # Add more rows
+                self.videos_table.setRowCount(needed_rows)
+            
+            # Update or create items for each row
             for row, video in enumerate(videos):
                 video_id = video.get('id', '')
-                self.videos_table.setItem(row, 0, QTableWidgetItem(video_id))
-                self.videos_table.setItem(row, 1, QTableWidgetItem(video.get('title', 'Untitled')))
                 
-                # Handle duration - API returns 'length' as STRING
+                # Update or create ID item
+                item = self.videos_table.item(row, 0)
+                if item:
+                    item.setText(video_id)
+                else:
+                    self.videos_table.setItem(row, 0, QTableWidgetItem(video_id))
+                
+                # Update or create Title item
+                item = self.videos_table.item(row, 1)
+                title = video.get('title', 'Untitled')
+                if item:
+                    item.setText(title)
+                else:
+                    self.videos_table.setItem(row, 1, QTableWidgetItem(title))
+                
+                # Update or create Duration item
                 length_str = video.get('length', '0')
                 try:
                     duration = float(length_str) if length_str else 0
-                    if duration > 0:
-                        self.videos_table.setItem(row, 2, QTableWidgetItem(format_duration(int(duration))))
-                    else:
-                        self.videos_table.setItem(row, 2, QTableWidgetItem("0:00"))
+                    duration_text = format_duration(int(duration)) if duration > 0 else "0:00"
                 except (ValueError, TypeError):
-                    self.videos_table.setItem(row, 2, QTableWidgetItem("N/A"))
+                    duration_text = "N/A"
                 
-                # Handle views
-                views = video.get('views', 0)
-                self.videos_table.setItem(row, 3, QTableWidgetItem(str(views)))
+                item = self.videos_table.item(row, 2)
+                if item:
+                    item.setText(duration_text)
+                else:
+                    self.videos_table.setItem(row, 2, QTableWidgetItem(duration_text))
                 
-                # Handle status - API returns 'protect' field as 'public' or 'private' string
+                # Update or create Views item
+                views = str(video.get('views', 0))
+                item = self.videos_table.item(row, 3)
+                if item:
+                    item.setText(views)
+                else:
+                    self.videos_table.setItem(row, 3, QTableWidgetItem(views))
+                
+                # Update or create Status item
                 protect = video.get('protect', 'unknown')
-                
-                # API returns: 'public' = public video, 'private' = private video
                 is_public = (protect == 'public')
-                
                 status_text = "Public" if is_public else "Private" if protect == 'private' else protect
-                self.videos_table.setItem(row, 4, QTableWidgetItem(status_text))
                 
-                # Edit button
-                edit_btn = QPushButton("Edit")
-                edit_btn.clicked.connect(lambda checked, vid=video_id: self.edit_video(vid))
-                self.videos_table.setCellWidget(row, 5, edit_btn)
+                item = self.videos_table.item(row, 4)
+                if item:
+                    item.setText(status_text)
+                else:
+                    self.videos_table.setItem(row, 4, QTableWidgetItem(status_text))
                 
-                # Toggle status button - shows opposite action (if public, show "Make Private")
-                toggle_btn = QPushButton("Make Private" if is_public else "Make Public")
-                toggle_btn.clicked.connect(lambda checked, vid=video_id, currently_public=is_public: self.toggle_video_status(vid, currently_public))
-                self.videos_table.setCellWidget(row, 6, toggle_btn)
+                # Update or create Edit button
+                edit_btn = self.videos_table.cellWidget(row, 5)
+                if not edit_btn:
+                    edit_btn = QPushButton("Edit")
+                    edit_btn.clicked.connect(lambda checked, vid=video_id: self.edit_video(vid))
+                    self.videos_table.setCellWidget(row, 5, edit_btn)
+                
+                # Update or create Toggle button
+                toggle_widget = self.videos_table.cellWidget(row, 6)
+                button_text = "Make Private" if is_public else "Make Public"
+                if toggle_widget and isinstance(toggle_widget, QPushButton):
+                    toggle_widget.setText(button_text)
+                    # Reconnect with updated state
+                    try:
+                        toggle_widget.clicked.disconnect()
+                    except:
+                        pass
+                    toggle_widget.clicked.connect(lambda checked, vid=video_id, currently_public=is_public: self.toggle_video_status(vid, currently_public))
+                else:
+                    toggle_btn = QPushButton(button_text)
+                    toggle_btn.clicked.connect(lambda checked, vid=video_id, currently_public=is_public: self.toggle_video_status(vid, currently_public))
+                    self.videos_table.setCellWidget(row, 6, toggle_btn)
+            
+            # Re-enable updates
+            self.videos_table.setUpdatesEnabled(True)
             
             logger.info(f"Loaded {len(videos)} videos for channel {self.current_channel_id} (page {page}/{self.total_pages})")
             
-            # Force complete UI refresh using multiple methods
+            # Force complete repaint by hiding and showing table
             from PyQt6.QtWidgets import QApplication
+            from PyQt6.QtCore import QTimer
             
-            # Process all pending events first
+            # Hide table
+            self.videos_table.hide()
+            
+            # Process events
             QApplication.processEvents()
             
-            # Force table to repaint
-            self.videos_table.reset()
-            self.videos_table.repaint()
+            # Show table again - this forces complete repaint
+            self.videos_table.show()
             
-            # Update viewport
-            viewport = self.videos_table.viewport()
-            if viewport:
-                viewport.repaint()
-            
-            # Process events again to ensure rendering
+            # Process events again
             QApplication.processEvents()
             
         except Exception as e:
