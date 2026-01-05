@@ -190,18 +190,28 @@ def api_video_protection(video_id):
         logger.info(f"Received request to set video {video_id} to {'private' if is_private else 'public'}")
         logger.info(f"Request data: {data}")
         
-        video_manager.set_video_protection(video_id, is_private)
+        # Call updated method that returns detailed response
+        result = video_manager.set_video_protection(video_id, is_private)
         
-        # Return the new status for confirmation
+        requested_status = result.get('requested_status', 'unknown')
+        actual_status = result.get('actual_status', 'unknown')
+        status_changed = (actual_status == requested_status)
+        
+        logger.info(f"Video {video_id} - Requested: {requested_status}, Actual: {actual_status}, Changed: {status_changed}")
+        
+        # Return detailed status for confirmation
         return jsonify({
-            'success': True,
-            'message': 'Video protection updated',
+            'success': result.get('success', False),
+            'message': f'Video is now {actual_status}' if status_changed else f'Status change failed. Video remains {actual_status}',
             'video_id': video_id,
             'is_private': is_private,
-            'protect': 'private' if is_private else 'public'
+            'requested_status': requested_status,
+            'actual_status': actual_status,
+            'status_changed': status_changed,
+            'protect': actual_status
         })
     except Exception as e:
-        logger.error(f"Error updating video {video_id} protection: {e}")
+        logger.error(f"Error updating video {video_id} protection: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
 

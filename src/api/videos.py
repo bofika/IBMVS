@@ -214,7 +214,7 @@ class VideoManager:
         
         return True
     
-    def set_video_protection(self, video_id: str, is_private: bool) -> bool:
+    def set_video_protection(self, video_id: str, is_private: bool) -> Dict[str, Any]:
         """
         Set video protection status (public/private).
         
@@ -223,20 +223,35 @@ class VideoManager:
             is_private: True for private, False for public
             
         Returns:
-            True if successful
+            Response from API with updated video details
         """
         # API expects 'private' or 'public' as string values
         protection_value = 'private' if is_private else 'public'
         logger.info(f"Setting video {video_id} protection to: {protection_value}")
         
+        # Send PUT request with protect parameter
         response = self.client.put(
             f'/videos/{video_id}.json',
             json={'protect': protection_value}
         )
         
-        # API might return different structures, just check if call succeeded
-        logger.info(f"Video {video_id} protection updated successfully")
-        return True
+        logger.info(f"API Response: {response}")
+        
+        # Verify the change by fetching the video details
+        video_details = self.get_video(video_id)
+        actual_protection = video_details.get('video', {}).get('protect', 'unknown')
+        
+        logger.info(f"Video {video_id} protection status after update: {actual_protection}")
+        
+        if actual_protection != protection_value:
+            logger.warning(f"Protection status mismatch! Expected: {protection_value}, Got: {actual_protection}")
+        
+        return {
+            'success': True,
+            'requested_status': protection_value,
+            'actual_status': actual_protection,
+            'video': video_details.get('video', {})
+        }
     
     def get_video_thumbnail(self, video_id: str) -> str:
         """
