@@ -13,7 +13,7 @@ from flask_cors import CORS
 from api.channels import channel_manager
 from api.videos import video_manager
 from api.players import player_manager
-from api.interactive import interactive_manager
+from api.interactivity import interactivity_manager
 from api.analytics import analytics_manager
 from core.auth import auth_manager
 from core.config import config
@@ -172,7 +172,7 @@ def api_player_settings(channel_id):
 def api_chat_settings(channel_id):
     """Get chat settings for a channel."""
     try:
-        settings = interactive_manager.get_chat_settings(channel_id)
+        settings = interactivity_manager.get_chat_settings(channel_id)
         return jsonify(settings)
     except Exception as e:
         logger.error(f"Error fetching chat settings for channel {channel_id}: {e}")
