@@ -95,6 +95,11 @@ def api_videos(channel_id):
                 search_query=search,
                 include_private=True
             )
+            # Normalize the response to use 'total' field for consistency
+            if 'paging' in response:
+                paging = response['paging']
+                if 'item_count' in paging and 'total' not in paging:
+                    paging['total'] = paging['item_count']
             return jsonify(response)
         else:
             # Need multiple requests to fetch all videos
@@ -127,9 +132,10 @@ def api_videos(channel_id):
                     all_videos.extend(videos)
                     
                     # Get total count from first response
+                    # IBM API uses 'item_count' not 'total'
                     if i == 0:
                         paging_info = response.get('paging', {})
-                        total_count = paging_info.get('total', 0)
+                        total_count = paging_info.get('item_count', paging_info.get('total', 0))
                     
                     # Stop if we got fewer videos than requested (last page)
                     if len(videos) < IBM_API_MAX_PAGE_SIZE:
@@ -148,6 +154,7 @@ def api_videos(channel_id):
                 'videos': all_videos,
                 'paging': {
                     'total': total_count,
+                    'item_count': total_count,
                     'page': page,
                     'pagesize': page_size,
                     'actual_count': len(all_videos)
