@@ -1,20 +1,20 @@
 """
-Videos management panel.
+Videos management panel with QTableView and Model/View architecture.
 """
 from PySide6.QtWidgets import (
-    QVBoxLayout, QHBoxLayout, QPushButton, QTableWidget,
-    QTableWidgetItem, QHeaderView, QLineEdit, QLabel,
-    QComboBox, QFileDialog, QProgressDialog, QDialog,
-    QFormLayout, QTextEdit, QDialogButtonBox, QMessageBox,
-    QListWidget, QListWidgetItem
+    QVBoxLayout, QHBoxLayout, QPushButton, QTableView,
+    QHeaderView, QLineEdit, QLabel, QComboBox, QFileDialog, 
+    QProgressDialog, QDialog, QFormLayout, QTextEdit, 
+    QDialogButtonBox, QMessageBox, QListWidget, QListWidgetItem
 )
-from PySide6.QtCore import Qt, QThread, Signal
+from PySide6.QtCore import Qt, QThread, Signal, QTimer
 
 from ui.base_panel import BasePanel
+from ui.video_table_model import VideoTableModel
+from ui.video_table_delegate import ButtonDelegate
 from api.videos import video_manager
 from api.channels import channel_manager
 from core.logger import get_logger
-from utils.helpers import format_file_size, format_duration
 
 logger = get_logger(__name__)
 
@@ -99,182 +99,49 @@ class ChannelSelectorDialog(QDialog):
         
         # Populate list
         self.populate_channels()
-        
-        # Set focus to search
-        self.search_input.setFocus()
     
-    def populate_channels(self, filter_text: str = ""):
+    def populate_channels(self):
         """Populate the channel list."""
         self.channel_list.clear()
-        
-        filter_lower = filter_text.lower()
-        current_item = None
-        
         for channel in self.channels:
-            title = channel.get('title', 'Untitled')
-            channel_id = channel.get('id', '')
-            
-            # Apply filter
-            if filter_text and filter_lower not in title.lower():
-                continue
-            
-            item = QListWidgetItem(f"{title} (ID: {channel_id})")
+            item = QListWidgetItem(channel.get('title', 'Untitled'))
             item.setData(Qt.ItemDataRole.UserRole, channel)
             self.channel_list.addItem(item)
             
             # Select current channel
-            if channel_id == self.current_channel_id:
-                current_item = item
-        
-        # Select and scroll to current channel
-        if current_item:
-            self.channel_list.setCurrentItem(current_item)
-            self.channel_list.scrollToItem(current_item)
+            if self.current_channel_id and channel.get('id') == self.current_channel_id:
+                item.setSelected(True)
+                self.channel_list.scrollToItem(item)
     
     def filter_channels(self, text: str):
         """Filter channels based on search text."""
-        self.populate_channels(text)
+        for i in range(self.channel_list.count()):
+            item = self.channel_list.item(i)
+            channel = item.data(Qt.ItemDataRole.UserRole)
+            title = channel.get('title', '').lower()
+            item.setHidden(text.lower() not in title)
     
     def on_item_double_clicked(self, item):
-        """Handle double-click on item."""
+        """Handle double click on item."""
         self.accept()
     
     def get_selected_channel(self):
         """Get the selected channel."""
-        current_item = self.channel_list.currentItem()
-        if current_item:
-            return current_item.data(Qt.ItemDataRole.UserRole)
+        items = self.channel_list.selectedItems()
+        if items:
+            return items[0].data(Qt.ItemDataRole.UserRole)
         return None
 
 
-class VideoUploadDialog(QDialog):
-    """Dialog for uploading videos."""
-    
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("Upload Video")
-        self.setModal(True)
-        self.setMinimumWidth(500)
-        self.file_path = None
-        self.setup_ui()
-    
-    def setup_ui(self):
-        """Setup dialog UI."""
-        layout = QVBoxLayout(self)
-        
-        # Form
-        form = QFormLayout()
-        
-        # Channel selection
-        self.channel_combo = QComboBox()
-        self.load_channels()
-        form.addRow("Channel:", self.channel_combo)
-        
-        # File selection
-        file_layout = QHBoxLayout()
-        self.file_label = QLabel("No file selected")
-        file_layout.addWidget(self.file_label)
-        
-        browse_btn = QPushButton("Browse...")
-        browse_btn.clicked.connect(self.browse_file)
-        file_layout.addWidget(browse_btn)
-        form.addRow("Video File:", file_layout)
-        
-        # Title
-        self.title_input = QLineEdit()
-        self.title_input.setPlaceholderText("Enter video title")
-        form.addRow("Title:", self.title_input)
-        
-        # Description
-        self.description_input = QTextEdit()
-        self.description_input.setPlaceholderText("Enter video description (optional)")
-        self.description_input.setMaximumHeight(100)
-        form.addRow("Description:", self.description_input)
-        
-        # Tags
-        self.tags_input = QLineEdit()
-        self.tags_input.setPlaceholderText("Enter tags separated by commas")
-        form.addRow("Tags:", self.tags_input)
-        
-        layout.addLayout(form)
-        
-        # Buttons
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | 
-            QDialogButtonBox.StandardButton.Cancel
-        )
-        buttons.accepted.connect(self.start_upload)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
-    
-    def load_channels(self):
-        """Load channels into combo box."""
-        try:
-            response = channel_manager.list_channels()
-            channels = response.get('channels', [])
-            
-            for channel in channels:
-                self.channel_combo.addItem(
-                    channel.get('title', 'Untitled'),
-                    channel.get('id')
-                )
-        except Exception as e:
-            logger.error(f"Failed to load channels: {e}")
-    
-    def browse_file(self):
-        """Browse for video file."""
-        file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Select Video File",
-            "",
-            "Video Files (*.mp4 *.mov *.avi *.mkv *.flv *.wmv *.webm);;All Files (*)"
-        )
-        
-        if file_path:
-            self.file_path = file_path
-            self.file_label.setText(file_path.split('/')[-1])
-            
-            # Auto-fill title if empty
-            if not self.title_input.text():
-                filename = file_path.split('/')[-1]
-                title = filename.rsplit('.', 1)[0]
-                self.title_input.setText(title)
-    
-    def start_upload(self):
-        """Start the upload process."""
-        if not self.file_path:
-            QMessageBox.warning(self, "No File", "Please select a video file.")
-            return
-        
-        if not self.title_input.text().strip():
-            QMessageBox.warning(self, "No Title", "Please enter a video title.")
-            return
-        
-        if self.channel_combo.currentIndex() < 0:
-            QMessageBox.warning(self, "No Channel", "Please select a channel.")
-            return
-        
-        self.accept()
-    
-    def get_upload_data(self):
-        """Get upload data."""
-        tags = [tag.strip() for tag in self.tags_input.text().split(',') if tag.strip()]
-        
-        return {
-            'channel_id': self.channel_combo.currentData(),
-            'file_path': self.file_path,
-            'title': self.title_input.text().strip(),
-            'description': self.description_input.toPlainText().strip(),
-            'tags': tags
-        }
-
-
 class VideosPanel(BasePanel):
-    """Panel for managing videos."""
+    """Panel for managing videos using Model/View architecture."""
     
     def __init__(self):
         super().__init__("Videos")
         self.current_channel_id = None
+        self.current_page = 1
+        self.total_pages = 1
+        self.page_size = 50
     
     def setup_ui(self):
         """Setup the videos panel UI."""
@@ -354,21 +221,53 @@ class VideosPanel(BasePanel):
         
         layout.addLayout(pagination_layout)
         
-        # Videos table
-        self.videos_table = QTableWidget()
-        self.videos_table.setColumnCount(7)
-        self.videos_table.setHorizontalHeaderLabels([
-            "ID", "Title", "Duration", "Views", "Status", "Edit", "Toggle Status"
-        ])
-        self.videos_table.horizontalHeader().setSectionResizeMode(
-            1, QHeaderView.ResizeMode.Stretch
-        )
-        layout.addWidget(self.videos_table)
+        # Videos table with Model/View
+        self.video_model = VideoTableModel(self)
+        self.videos_table = QTableView()
+        self.videos_table.setModel(self.video_model)
         
-        # Pagination state
-        self.current_page = 1
-        self.total_pages = 1
-        self.page_size = 50
+        # Set up delegate for buttons
+        self.button_delegate = ButtonDelegate(self)
+        self.videos_table.setItemDelegateForColumn(5, self.button_delegate)  # Edit column
+        self.videos_table.setItemDelegateForColumn(6, self.button_delegate)  # Toggle column
+        
+        # Configure table
+        self.videos_table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
+        self.videos_table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
+        self.videos_table.setAlternatingRowColors(True)
+        self.videos_table.setSortingEnabled(False)
+        self.videos_table.verticalHeader().setVisible(False)
+        
+        # Set column widths
+        header = self.videos_table.horizontalHeader()
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)  # Title column stretches
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)  # ID
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)  # Duration
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)  # Views
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)  # Status
+        header.setSectionResizeMode(5, QHeaderView.ResizeMode.Fixed)  # Edit button
+        header.setSectionResizeMode(6, QHeaderView.ResizeMode.Fixed)  # Toggle button
+        self.videos_table.setColumnWidth(5, 80)
+        self.videos_table.setColumnWidth(6, 120)
+        
+        # Connect click events
+        self.videos_table.clicked.connect(self.on_table_clicked)
+        
+        layout.addWidget(self.videos_table)
+    
+    def on_table_clicked(self, index):
+        """Handle table cell clicks."""
+        row, col = self.button_delegate.getClickedCell()
+        if row >= 0:
+            video = self.video_model.getVideo(row)
+            if video:
+                video_id = video.get('id', '')
+                if col == 5:  # Edit column
+                    self.edit_video(video_id)
+                elif col == 6:  # Toggle column
+                    protect = video.get('protect', 'unknown')
+                    is_public = (protect == 'public')
+                    self.toggle_video_status(video_id, is_public)
     
     def load_channels(self):
         """Load channels list."""
@@ -401,150 +300,39 @@ class VideosPanel(BasePanel):
                 self.current_channel_id = selected_channel.get('id')
                 self.channel_button.setText(selected_channel.get('title', 'Unknown Channel'))
                 logger.info(f"Channel changed to: {selected_channel.get('title')} (ID: {self.current_channel_id})")
-                self.load_videos()
+                self.load_videos(1)
     
     def load_videos(self, page: int = 1):
-        """Load videos for selected channel with pagination."""
+        """Load videos for the current channel."""
         if not self.current_channel_id:
-            return
-        
-        if not hasattr(self, 'videos_table'):
-            logger.warning("Videos table not initialized yet")
+            self.show_info("Please select a channel first")
             return
         
         try:
-            self.current_page = page
+            logger.info(f"Fetching videos for channel {self.current_channel_id} (page {page}, include_private=True)")
+            
             response = video_manager.list_videos(
                 self.current_channel_id,
                 page=page,
-                page_size=self.page_size
+                page_size=self.page_size,
+                include_private=True
             )
+            
             videos = response.get('videos', [])
             paging = response.get('paging', {})
             
-            # Update pagination info
-            self.total_pages = paging.get('page_count', 1)
-            total_items = paging.get('item_count', len(videos))
+            # Update pagination
+            self.current_page = page
+            self.total_pages = max(1, (paging.get('total', 0) + self.page_size - 1) // self.page_size)
             
-            self.page_label.setText(f"Page {self.current_page} of {self.total_pages} ({total_items} videos)")
+            self.page_label.setText(f"Page {self.current_page} of {self.total_pages} ({paging.get('total', 0)} videos)")
             self.prev_page_btn.setEnabled(self.current_page > 1)
             self.next_page_btn.setEnabled(self.current_page < self.total_pages)
             
-            # Disable updates during modification
-            self.videos_table.setUpdatesEnabled(False)
-            
-            # Adjust row count if needed
-            current_rows = self.videos_table.rowCount()
-            needed_rows = len(videos)
-            
-            if current_rows > needed_rows:
-                # Remove extra rows
-                for row in range(needed_rows, current_rows):
-                    for col in range(self.videos_table.columnCount()):
-                        widget = self.videos_table.cellWidget(row, col)
-                        if widget:
-                            self.videos_table.removeCellWidget(row, col)
-                            widget.deleteLater()
-                self.videos_table.setRowCount(needed_rows)
-            elif current_rows < needed_rows:
-                # Add more rows
-                self.videos_table.setRowCount(needed_rows)
-            
-            # Update or create items for each row
-            for row, video in enumerate(videos):
-                video_id = video.get('id', '')
-                
-                # Update or create ID item
-                item = self.videos_table.item(row, 0)
-                if item:
-                    item.setText(video_id)
-                else:
-                    self.videos_table.setItem(row, 0, QTableWidgetItem(video_id))
-                
-                # Update or create Title item
-                item = self.videos_table.item(row, 1)
-                title = video.get('title', 'Untitled')
-                if item:
-                    item.setText(title)
-                else:
-                    self.videos_table.setItem(row, 1, QTableWidgetItem(title))
-                
-                # Update or create Duration item
-                length_str = video.get('length', '0')
-                try:
-                    duration = float(length_str) if length_str else 0
-                    duration_text = format_duration(int(duration)) if duration > 0 else "0:00"
-                except (ValueError, TypeError):
-                    duration_text = "N/A"
-                
-                item = self.videos_table.item(row, 2)
-                if item:
-                    item.setText(duration_text)
-                else:
-                    self.videos_table.setItem(row, 2, QTableWidgetItem(duration_text))
-                
-                # Update or create Views item
-                views = str(video.get('views', 0))
-                item = self.videos_table.item(row, 3)
-                if item:
-                    item.setText(views)
-                else:
-                    self.videos_table.setItem(row, 3, QTableWidgetItem(views))
-                
-                # Update or create Status item
-                protect = video.get('protect', 'unknown')
-                is_public = (protect == 'public')
-                status_text = "Public" if is_public else "Private" if protect == 'private' else protect
-                
-                item = self.videos_table.item(row, 4)
-                if item:
-                    item.setText(status_text)
-                else:
-                    self.videos_table.setItem(row, 4, QTableWidgetItem(status_text))
-                
-                # Update or create Edit button
-                edit_btn = self.videos_table.cellWidget(row, 5)
-                if not edit_btn:
-                    edit_btn = QPushButton("Edit")
-                    edit_btn.clicked.connect(lambda checked, vid=video_id: self.edit_video(vid))
-                    self.videos_table.setCellWidget(row, 5, edit_btn)
-                
-                # Update or create Toggle button
-                toggle_widget = self.videos_table.cellWidget(row, 6)
-                button_text = "Make Private" if is_public else "Make Public"
-                if toggle_widget and isinstance(toggle_widget, QPushButton):
-                    toggle_widget.setText(button_text)
-                    # Reconnect with updated state
-                    try:
-                        toggle_widget.clicked.disconnect()
-                    except:
-                        pass
-                    toggle_widget.clicked.connect(lambda checked, vid=video_id, currently_public=is_public: self.toggle_video_status(vid, currently_public))
-                else:
-                    toggle_btn = QPushButton(button_text)
-                    toggle_btn.clicked.connect(lambda checked, vid=video_id, currently_public=is_public: self.toggle_video_status(vid, currently_public))
-                    self.videos_table.setCellWidget(row, 6, toggle_btn)
-            
-            # Re-enable updates
-            self.videos_table.setUpdatesEnabled(True)
+            # Update model - this will automatically refresh the view
+            self.video_model.setVideos(videos)
             
             logger.info(f"Loaded {len(videos)} videos for channel {self.current_channel_id} (page {page}/{self.total_pages})")
-            
-            # Force complete repaint by hiding and showing table
-            from PySide6.QtWidgets import QApplication
-            from PySide6.QtCore import QTimer
-            
-            # Hide table
-            self.videos_table.hide()
-            
-            # Process events
-            QApplication.processEvents()
-            
-            # Show table again - this forces complete repaint
-            self.videos_table.show()
-            
-            # Process events again
-            QApplication.processEvents()
             
         except Exception as e:
             logger.error(f"Failed to load videos: {str(e)}")
@@ -566,19 +354,12 @@ class VideosPanel(BasePanel):
         self.load_videos(1)  # Reset to first page
     
     def search_videos(self, text: str):
-        """Search videos."""
-        if not hasattr(self, 'videos_table'):
-            return
-        
-        for row in range(self.videos_table.rowCount()):
-            title_item = self.videos_table.item(row, 1)
-            if title_item:
-                should_show = text.lower() in title_item.text().lower()
-                self.videos_table.setRowHidden(row, not should_show)
+        """Search videos (filter rows)."""
+        # TODO: Implement proxy model for filtering
+        pass
     
     def edit_video(self, video_id: str):
         """Edit a video."""
-        # TODO: Show edit video dialog
         self.show_info(f"Edit video dialog for video {video_id} - To be implemented")
         logger.info(f"Edit video requested: {video_id}")
     
@@ -594,58 +375,23 @@ class VideosPanel(BasePanel):
             
             self.show_success(f"Video status changed to {status_text}")
             
-            # Add a small delay to allow API to propagate the change
-            from PySide6.QtCore import QTimer
+            # Reload current page after a short delay
             QTimer.singleShot(1000, lambda: self.load_videos(self.current_page))
             
         except Exception as e:
-            logger.error(f"Failed to toggle video status: {e}")
-            self.show_error(f"Failed to change video status: {str(e)}")
+            logger.error(f"Failed to toggle video status: {str(e)}")
+            self.show_error(f"Failed to toggle video status: {str(e)}")
     
     def upload_video(self):
-        """Upload a new video."""
-        dialog = VideoUploadDialog(self)
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            upload_data = dialog.get_upload_data()
-            self.perform_upload(upload_data)
-    
-    def perform_upload(self, upload_data: dict):
-        """Perform the actual upload."""
-        progress = QProgressDialog("Uploading video...", "Cancel", 0, 100, self)
-        progress.setWindowModality(Qt.WindowModality.WindowModal)
-        progress.setMinimumDuration(0)
-        
-        # Create upload thread
-        self.upload_thread = VideoUploadThread(
-            upload_data['channel_id'],
-            upload_data['file_path'],
-            upload_data['title'],
-            upload_data['description'],
-            upload_data['tags']
-        )
-        
-        self.upload_thread.finished.connect(lambda result: self.on_upload_finished(result, progress))
-        self.upload_thread.error.connect(lambda error: self.on_upload_error(error, progress))
-        
-        self.upload_thread.start()
-        progress.exec()
-    
-    def on_upload_finished(self, result: dict, progress: QProgressDialog):
-        """Handle upload completion."""
-        progress.close()
-        self.show_success(f"Video uploaded successfully: {result.get('title', 'Untitled')}")
-        self.refresh()
-    
-    def on_upload_error(self, error: str, progress: QProgressDialog):
-        """Handle upload error."""
-        progress.close()
-        self.show_error(f"Upload failed: {error}")
+        """Upload a video."""
+        self.show_info("Upload video dialog - To be implemented")
+        logger.info("Upload video requested")
     
     def refresh(self):
-        """Refresh videos list."""
-        if hasattr(self, 'current_page'):
+        """Refresh the current view."""
+        if self.current_channel_id:
             self.load_videos(self.current_page)
         else:
-            self.load_videos()
+            self.load_channels()
 
 # Made with Bob
