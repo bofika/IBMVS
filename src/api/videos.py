@@ -42,7 +42,7 @@ class VideoManager:
             Dictionary containing videos list and pagination info
         """
         params: Dict[str, Any] = {
-            'p': page,
+            'page': page,
             'pagesize': page_size
         }
         
