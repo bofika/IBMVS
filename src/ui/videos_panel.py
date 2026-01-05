@@ -452,9 +452,13 @@ class VideosPanel(BasePanel):
                 views = video.get('views', 0)
                 self.videos_table.setItem(row, 3, QTableWidgetItem(str(views)))
                 
-                # Handle status - API returns 'protect' field (public/private)
+                # Handle status - API returns 'protect' field as 'public' or 'private' string
                 protect = video.get('protect', 'unknown')
-                status_text = "Private" if protect == 'true' else "Public" if protect == 'false' else protect
+                
+                # API returns: 'public' = public video, 'private' = private video
+                is_public = (protect == 'public')
+                
+                status_text = "Public" if is_public else "Private" if protect == 'private' else protect
                 self.videos_table.setItem(row, 4, QTableWidgetItem(status_text))
                 
                 # Edit button
@@ -462,9 +466,9 @@ class VideosPanel(BasePanel):
                 edit_btn.clicked.connect(lambda checked, vid=video_id: self.edit_video(vid))
                 self.videos_table.setCellWidget(row, 5, edit_btn)
                 
-                # Toggle status button
-                toggle_btn = QPushButton("Make Private" if protect == 'false' else "Make Public")
-                toggle_btn.clicked.connect(lambda checked, vid=video_id, is_pub=(protect == 'false'): self.toggle_video_status(vid, is_pub))
+                # Toggle status button - shows opposite action (if public, show "Make Private")
+                toggle_btn = QPushButton("Make Private" if is_public else "Make Public")
+                toggle_btn.clicked.connect(lambda checked, vid=video_id, currently_public=is_public: self.toggle_video_status(vid, currently_public))
                 self.videos_table.setCellWidget(row, 6, toggle_btn)
             
             logger.info(f"Loaded {len(videos)} videos for channel {self.current_channel_id} (page {page}/{self.total_pages})")
@@ -516,7 +520,10 @@ class VideosPanel(BasePanel):
             video_manager.set_video_protection(video_id, make_private)
             
             self.show_success(f"Video status changed to {status_text}")
-            self.refresh()
+            
+            # Add a small delay to allow API to propagate the change
+            from PyQt6.QtCore import QTimer
+            QTimer.singleShot(1000, lambda: self.load_videos(self.current_page))
             
         except Exception as e:
             logger.error(f"Failed to toggle video status: {e}")
@@ -563,6 +570,9 @@ class VideosPanel(BasePanel):
     
     def refresh(self):
         """Refresh videos list."""
-        self.load_videos()
+        if hasattr(self, 'current_page'):
+            self.load_videos(self.current_page)
+        else:
+            self.load_videos()
 
 # Made with Bob

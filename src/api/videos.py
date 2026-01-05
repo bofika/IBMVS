@@ -49,9 +49,12 @@ class VideoManager:
         if search_query:
             params['q'] = search_query
         
-        # Include private videos by default (show all videos for management)
+        # Include both public and private videos by default (show all videos for management)
+        # According to IBM API docs: filter[protect] can be "public", "private", or both comma-separated
         if include_private:
-            params['include_unpublished'] = 'true'
+            params['filter[protect]'] = 'public,private'
+        else:
+            params['filter[protect]'] = 'public'
         
         logger.info(f"Fetching videos for channel {channel_id} (page {page}, include_private={include_private})")
         response = self.client.get(f'/channels/{channel_id}/videos.json', params=params)
@@ -211,7 +214,7 @@ class VideoManager:
         
         return True
     
-    def set_video_protection(self, video_id: str, is_private: bool) -> Dict[str, Any]:
+    def set_video_protection(self, video_id: str, is_private: bool) -> bool:
         """
         Set video protection status (public/private).
         
@@ -220,9 +223,10 @@ class VideoManager:
             is_private: True for private, False for public
             
         Returns:
-            Updated video details
+            True if successful
         """
-        protection_value = 'true' if is_private else 'false'
+        # API expects 'private' or 'public' as string values
+        protection_value = 'private' if is_private else 'public'
         logger.info(f"Setting video {video_id} protection to: {protection_value}")
         
         response = self.client.put(
@@ -230,7 +234,9 @@ class VideoManager:
             json={'protect': protection_value}
         )
         
-        return response.get('video', {})
+        # API might return different structures, just check if call succeeded
+        logger.info(f"Video {video_id} protection updated successfully")
+        return True
     
     def get_video_thumbnail(self, video_id: str) -> str:
         """
