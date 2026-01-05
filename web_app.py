@@ -187,8 +187,19 @@ def api_video_protection(video_id):
         data = request.get_json()
         is_private = data.get('is_private', False)
         
+        logger.info(f"Received request to set video {video_id} to {'private' if is_private else 'public'}")
+        logger.info(f"Request data: {data}")
+        
         video_manager.set_video_protection(video_id, is_private)
-        return jsonify({'success': True, 'message': 'Video protection updated'})
+        
+        # Return the new status for confirmation
+        return jsonify({
+            'success': True,
+            'message': 'Video protection updated',
+            'video_id': video_id,
+            'is_private': is_private,
+            'protect': 'private' if is_private else 'public'
+        })
     except Exception as e:
         logger.error(f"Error updating video {video_id} protection: {e}")
         return jsonify({'error': str(e)}), 500
