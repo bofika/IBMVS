@@ -25,7 +25,8 @@ class VideoManager:
         channel_id: str,
         page: int = 1,
         page_size: int = 50,
-        search_query: Optional[str] = None
+        search_query: Optional[str] = None,
+        include_private: bool = True
     ) -> Dict[str, Any]:
         """
         Get list of videos for a specific channel.
@@ -35,6 +36,7 @@ class VideoManager:
             page: Page number (1-based)
             page_size: Number of items per page
             search_query: Optional search query
+            include_private: Include private/unpublished videos (default: True)
             
         Returns:
             Dictionary containing videos list and pagination info
@@ -47,7 +49,11 @@ class VideoManager:
         if search_query:
             params['q'] = search_query
         
-        logger.info(f"Fetching videos for channel {channel_id} (page {page})")
+        # Include private videos by default (show all videos for management)
+        if include_private:
+            params['include_unpublished'] = 'true'
+        
+        logger.info(f"Fetching videos for channel {channel_id} (page {page}, include_private={include_private})")
         response = self.client.get(f'/channels/{channel_id}/videos.json', params=params)
         
         return response
@@ -204,6 +210,27 @@ class VideoManager:
         self.client.delete(f'/videos/{video_id}.json')
         
         return True
+    
+    def set_video_protection(self, video_id: str, is_private: bool) -> Dict[str, Any]:
+        """
+        Set video protection status (public/private).
+        
+        Args:
+            video_id: Video ID
+            is_private: True for private, False for public
+            
+        Returns:
+            Updated video details
+        """
+        protection_value = 'true' if is_private else 'false'
+        logger.info(f"Setting video {video_id} protection to: {protection_value}")
+        
+        response = self.client.put(
+            f'/videos/{video_id}.json',
+            json={'protect': protection_value}
+        )
+        
+        return response.get('video', {})
     
     def get_video_thumbnail(self, video_id: str) -> str:
         """

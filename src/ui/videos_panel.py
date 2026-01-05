@@ -6,10 +6,9 @@ from PyQt6.QtWidgets import (
     QTableWidgetItem, QHeaderView, QLineEdit, QLabel,
     QComboBox, QFileDialog, QProgressDialog, QDialog,
     QFormLayout, QTextEdit, QDialogButtonBox, QMessageBox,
-    QListView
+    QListWidget, QListWidgetItem
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
-from PyQt6.QtGui import QStandardItemModel, QStandardItem
 
 from ui.base_panel import BasePanel
 from api.videos import video_manager
@@ -49,6 +48,103 @@ class VideoUploadThread(QThread):
             self.finished.emit(result)
         except Exception as e:
             self.error.emit(str(e))
+
+
+class ChannelSelectorDialog(QDialog):
+    """Dialog for selecting a channel with search functionality."""
+    
+    def __init__(self, channels: list, current_channel_id: str = None, parent=None):
+        super().__init__(parent)
+        self.channels = channels
+        self.selected_channel = None
+        self.current_channel_id = current_channel_id
+        self.setup_ui()
+    
+    def setup_ui(self):
+        """Setup the dialog UI."""
+        self.setWindowTitle("Select Channel")
+        self.setMinimumWidth(500)
+        self.setMinimumHeight(400)
+        
+        layout = QVBoxLayout(self)
+        
+        # Search box
+        search_layout = QHBoxLayout()
+        search_layout.addWidget(QLabel("Search:"))
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText("Type to filter channels...")
+        self.search_input.textChanged.connect(self.filter_channels)
+        search_layout.addWidget(self.search_input)
+        layout.addLayout(search_layout)
+        
+        # Channel list
+        self.channel_list = QListWidget()
+        self.channel_list.itemDoubleClicked.connect(self.on_item_double_clicked)
+        layout.addWidget(self.channel_list)
+        
+        # Buttons
+        button_layout = QHBoxLayout()
+        button_layout.addStretch()
+        
+        select_btn = QPushButton("Select")
+        select_btn.clicked.connect(self.accept)
+        select_btn.setDefault(True)
+        button_layout.addWidget(select_btn)
+        
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.clicked.connect(self.reject)
+        button_layout.addWidget(cancel_btn)
+        
+        layout.addLayout(button_layout)
+        
+        # Populate list
+        self.populate_channels()
+        
+        # Set focus to search
+        self.search_input.setFocus()
+    
+    def populate_channels(self, filter_text: str = ""):
+        """Populate the channel list."""
+        self.channel_list.clear()
+        
+        filter_lower = filter_text.lower()
+        current_item = None
+        
+        for channel in self.channels:
+            title = channel.get('title', 'Untitled')
+            channel_id = channel.get('id', '')
+            
+            # Apply filter
+            if filter_text and filter_lower not in title.lower():
+                continue
+            
+            item = QListWidgetItem(f"{title} (ID: {channel_id})")
+            item.setData(Qt.ItemDataRole.UserRole, channel)
+            self.channel_list.addItem(item)
+            
+            # Select current channel
+            if channel_id == self.current_channel_id:
+                current_item = item
+        
+        # Select and scroll to current channel
+        if current_item:
+            self.channel_list.setCurrentItem(current_item)
+            self.channel_list.scrollToItem(current_item)
+    
+    def filter_channels(self, text: str):
+        """Filter channels based on search text."""
+        self.populate_channels(text)
+    
+    def on_item_double_clicked(self, item):
+        """Handle double-click on item."""
+        self.accept()
+    
+    def get_selected_channel(self):
+        """Get the selected channel."""
+        current_item = self.channel_list.currentItem()
+        if current_item:
+            return current_item.data(Qt.ItemDataRole.UserRole)
+        return None
 
 
 class VideoUploadDialog(QDialog):
@@ -192,65 +288,28 @@ class VideosPanel(BasePanel):
         # Toolbar
         toolbar = QHBoxLayout()
         
-        # Channel selector
+        # Channel selector button
         toolbar.addWidget(QLabel("Channel:"))
-        self.channel_combo = QComboBox()
-        self.channel_combo.setMinimumWidth(300)
-        self.channel_combo.setMinimumHeight(30)
-        self.channel_combo.setMaxVisibleItems(15)
-        self.channel_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
-        
-        # Create and set a QListView for the dropdown popup
-        list_view = QListView()
-        list_view.setStyleSheet("""
-            QListView {
+        self.channel_button = QPushButton("Select Channel...")
+        self.channel_button.setMinimumWidth(300)
+        self.channel_button.setMinimumHeight(30)
+        self.channel_button.clicked.connect(self.show_channel_selector)
+        self.channel_button.setStyleSheet("""
+            QPushButton {
+                text-align: left;
+                padding: 5px 10px;
                 background-color: #2b2b2b;
                 color: white;
-                selection-background-color: #0d5aa7;
-                selection-color: white;
                 border: 1px solid #555;
-                padding: 2px;
-                outline: none;
             }
-            QListView::item {
-                min-height: 30px;
-                padding: 5px;
-                border: none;
-            }
-            QListView::item:hover {
+            QPushButton:hover {
                 background-color: #3a3a3a;
             }
-            QListView::item:selected {
-                background-color: #0d5aa7;
-            }
         """)
-        self.channel_combo.setView(list_view)
+        toolbar.addWidget(self.channel_button)
         
-        # Style the combo box itself
-        self.channel_combo.setStyleSheet("""
-            QComboBox {
-                padding: 5px;
-                background-color: #2b2b2b;
-                color: white;
-                border: 1px solid #555;
-            }
-            QComboBox::drop-down {
-                border: none;
-                width: 20px;
-            }
-            QComboBox::down-arrow {
-                image: none;
-                border-left: 5px solid transparent;
-                border-right: 5px solid transparent;
-                border-top: 5px solid white;
-                margin-right: 5px;
-            }
-        """)
-        
-        self.channel_combo.currentIndexChanged.connect(self.on_channel_changed)
-        toolbar.addWidget(self.channel_combo)
-        
-        # Load channels after adding to layout
+        # Store channels list
+        self.channels_list = []
         self.load_channels()
         
         self.search_input = QLineEdit()
@@ -297,9 +356,9 @@ class VideosPanel(BasePanel):
         
         # Videos table
         self.videos_table = QTableWidget()
-        self.videos_table.setColumnCount(6)
+        self.videos_table.setColumnCount(7)
         self.videos_table.setHorizontalHeaderLabels([
-            "ID", "Title", "Duration", "Views", "Status", "Actions"
+            "ID", "Title", "Duration", "Views", "Status", "Edit", "Toggle Status"
         ])
         self.videos_table.horizontalHeader().setSectionResizeMode(
             1, QHeaderView.ResizeMode.Stretch
@@ -312,43 +371,37 @@ class VideosPanel(BasePanel):
         self.page_size = 50
     
     def load_channels(self):
-        """Load channels into combo box."""
+        """Load channels list."""
         try:
             response = channel_manager.list_channels()
-            channels = response.get('channels', [])
+            self.channels_list = response.get('channels', [])
             
-            logger.info(f"Loading {len(channels)} channels into dropdown")
+            logger.info(f"Loaded {len(self.channels_list)} channels")
             
-            self.channel_combo.clear()
-            self.channel_combo.addItem("-- Select a Channel --", None)
-            
-            for channel in channels:
-                title = channel.get('title', 'Untitled')
-                channel_id = channel.get('id')
-                self.channel_combo.addItem(title, channel_id)
-                logger.debug(f"Added channel: {title} (ID: {channel_id})")
-            
-            logger.info(f"Dropdown now has {self.channel_combo.count()} items")
-            
-            # Don't auto-load videos, wait for user selection
-            if channels:
-                self.current_channel_id = None
+            # Set button text if we have a current channel
+            if hasattr(self, 'current_channel_id') and self.current_channel_id:
+                for channel in self.channels_list:
+                    if channel.get('id') == self.current_channel_id:
+                        self.channel_button.setText(channel.get('title', 'Unknown Channel'))
+                        break
         except Exception as e:
             logger.error(f"Failed to load channels: {e}")
             self.show_error(f"Failed to load channels: {str(e)}")
     
-    def on_channel_changed(self, index: int):
-        """Handle channel selection change."""
-        if index > 0:  # Skip the "Select a Channel" option
-            self.current_channel_id = self.channel_combo.currentData()
-            if self.current_channel_id:
-                logger.info(f"Channel changed to: {self.channel_combo.currentText()} (ID: {self.current_channel_id})")
+    def show_channel_selector(self):
+        """Show channel selector dialog."""
+        if not self.channels_list:
+            self.show_error("No channels available")
+            return
+        
+        dialog = ChannelSelectorDialog(self.channels_list, self.current_channel_id, self)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            selected_channel = dialog.get_selected_channel()
+            if selected_channel:
+                self.current_channel_id = selected_channel.get('id')
+                self.channel_button.setText(selected_channel.get('title', 'Unknown Channel'))
+                logger.info(f"Channel changed to: {selected_channel.get('title')} (ID: {self.current_channel_id})")
                 self.load_videos()
-        elif index == 0:
-            # "Select a Channel" option selected
-            self.current_channel_id = None
-            if hasattr(self, 'videos_table'):
-                self.videos_table.setRowCount(0)
     
     def load_videos(self, page: int = 1):
         """Load videos for selected channel with pagination."""
@@ -401,12 +454,18 @@ class VideosPanel(BasePanel):
                 
                 # Handle status - API returns 'protect' field (public/private)
                 protect = video.get('protect', 'unknown')
-                self.videos_table.setItem(row, 4, QTableWidgetItem(protect))
+                status_text = "Private" if protect == 'true' else "Public" if protect == 'false' else protect
+                self.videos_table.setItem(row, 4, QTableWidgetItem(status_text))
                 
-                # Actions buttons
+                # Edit button
                 edit_btn = QPushButton("Edit")
                 edit_btn.clicked.connect(lambda checked, vid=video_id: self.edit_video(vid))
                 self.videos_table.setCellWidget(row, 5, edit_btn)
+                
+                # Toggle status button
+                toggle_btn = QPushButton("Make Private" if protect == 'false' else "Make Public")
+                toggle_btn.clicked.connect(lambda checked, vid=video_id, is_pub=(protect == 'false'): self.toggle_video_status(vid, is_pub))
+                self.videos_table.setCellWidget(row, 6, toggle_btn)
             
             logger.info(f"Loaded {len(videos)} videos for channel {self.current_channel_id} (page {page}/{self.total_pages})")
             
@@ -445,6 +504,23 @@ class VideosPanel(BasePanel):
         # TODO: Show edit video dialog
         self.show_info(f"Edit video dialog for video {video_id} - To be implemented")
         logger.info(f"Edit video requested: {video_id}")
+    
+    def toggle_video_status(self, video_id: str, is_currently_public: bool):
+        """Toggle video between public and private."""
+        try:
+            # Set to private if currently public, and vice versa
+            make_private = is_currently_public
+            status_text = "private" if make_private else "public"
+            
+            logger.info(f"Toggling video {video_id} to {status_text}")
+            video_manager.set_video_protection(video_id, make_private)
+            
+            self.show_success(f"Video status changed to {status_text}")
+            self.refresh()
+            
+        except Exception as e:
+            logger.error(f"Failed to toggle video status: {e}")
+            self.show_error(f"Failed to change video status: {str(e)}")
     
     def upload_video(self):
         """Upload a new video."""
