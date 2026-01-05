@@ -13,6 +13,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Advanced analytics with export functionality
 - Scheduled streaming capabilities
 - Enhanced moderation tools
+- Video upload functionality in web UI
+- Player configuration in web UI
+- Analytics dashboard in web UI
+- Stream monitoring in web UI
+
+## [1.1.0] - 2026-01-05
+
+### Added
+- **Web-based UI** using Flask to replace Qt desktop application
+- Optimistic UI updates for video protection toggle
+- Loading states and visual feedback for all operations
+- Smart pagination supporting 50/100/200 videos per page
+- Real-time video status updates without page refresh
+- Responsive Bootstrap 5 design
+- Cross-platform compatibility (macOS, Windows, Linux)
+
+### Fixed
+- **Critical**: Video protection toggle now works correctly
+  - Changed from JSON to form-encoded data for IBM API compatibility
+  - Added verification of status changes
+  - Implemented optimistic UI updates with automatic revert on failure
+- Pagination parameter corrected from 'p' to 'page'
+- Total count field corrected from 'total' to 'item_count'
+- Video details now use 'detail_level=owner' to retrieve protection status
+- Qt table refresh issues on macOS (resolved by migrating to web UI)
+
+### Changed
+- **Breaking**: Primary interface is now web-based (Flask) instead of Qt desktop
+- Video protection API calls now use form data instead of JSON
+- Improved user feedback with instant visual updates
+- Enhanced error messages and logging
+
+### Technical
+- Migrated from PyQt6/PySide6 to Flask web framework
+- Implemented optimistic UI pattern for better UX
+- Added comprehensive logging for API interactions
+- Fixed f-string syntax errors in logging statements
 
 ## [1.0.0] - 2025-12-30
 

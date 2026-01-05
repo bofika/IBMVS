@@ -22,17 +22,20 @@ After extensive investigation, we discovered that Qt (both PyQt6 and PySide6) ha
 
 ## Features
 
-### Current Implementation
+### Current Implementation ✅
 
 - **Dashboard**: Overview of channels and videos
 - **Channel Management**: View and select channels
-- **Video Management**: 
-  - View videos with pagination
-  - Toggle video status (Public/Private) - **WORKS CORRECTLY!**
-  - Search videos
-  - Adjustable page size (50/100/200)
-  - Real-time status updates
-- **Settings**: Configure API credentials
+- **Video Management**:
+  - View videos with smart pagination (50/100/200 per page)
+  - **Toggle video status (Public/Private)** - ✅ **FULLY WORKING!**
+    - Instant visual feedback with loading states
+    - Optimistic UI updates
+    - Automatic verification of changes
+    - Confirmed working via IBM Dashboard
+  - Search videos by title and metadata
+  - Real-time status updates without page refresh
+- **Settings**: Configure API credentials with connection testing
 
 ### Planned Features
 
@@ -108,11 +111,32 @@ http://localhost:5000
 1. Select a channel from the dropdown
 2. Videos will load automatically
 3. **Toggle video status**: Click "Make Private" or "Make Public"
-   - Status updates immediately (no refresh needed!)
-   - Table updates automatically after 1 second
+   - Button shows loading spinner immediately
+   - Status updates instantly in the table (optimistic update)
+   - Changes are verified on IBM's servers
+   - Button updates to reflect new state
+   - Success message confirms the change
+   - If change fails, status reverts automatically
 4. Use pagination to navigate through videos
 5. Search for specific videos
 6. Change page size (50/100/200 videos per page)
+
+### Video Protection Toggle - How It Works
+
+The video protection toggle feature uses an optimistic UI pattern for the best user experience:
+
+1. **Click button** → Instant visual feedback
+2. **Loading state** → Button shows spinner and "Updating..." text
+3. **Optimistic update** → Status changes immediately in the UI
+4. **API call** → Request sent to IBM Video Streaming API
+5. **Verification** → Actual status retrieved from API
+6. **Confirmation** → Success message or automatic revert if failed
+
+**Technical Details:**
+- Uses form-encoded data (`application/x-www-form-urlencoded`) instead of JSON
+- Includes `detail_level=owner` parameter to retrieve protection status
+- Verifies changes by fetching updated video details
+- Takes 3-4 seconds due to IBM API processing time
 
 ## Architecture
 

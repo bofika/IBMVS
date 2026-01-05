@@ -1,74 +1,64 @@
 # IBM Video Streaming API Manager
 
 [![Python Version](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/)
-[![PyQt6](https://img.shields.io/badge/PyQt6-6.6%2B-green.svg)](https://www.riverbankcomputing.com/software/pyqt/)
+[![Flask](https://img.shields.io/badge/Flask-3.0%2B-green.svg)](https://flask.palletsprojects.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/bofika/IBMVS)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg)](https://github.com/bofika/IBMVS)
 
-A comprehensive cross-platform desktop application for managing IBM Video Streaming services through their API. Built with Python and PyQt6, supporting both macOS and Windows.
+A comprehensive cross-platform **web-based application** for managing IBM Video Streaming services through their API. Built with Python and Flask, accessible from any modern web browser.
 
-## Features
+> **Note**: This application now uses a web-based interface instead of the previous Qt desktop application to ensure consistent behavior across all platforms.
+
+## ✨ Features
 
 ### 🎥 Channel Management
-- Create, edit, and delete channels
-- Configure broadcast settings
-- Manage channel metadata and descriptions
+- View and browse all channels
+- Quick access to channel videos
 - Search and filter channels
+- Channel metadata display
 
 ### 📹 Video Management
-- Upload videos with progress tracking
-- Edit video metadata (title, description, tags)
-- Delete videos with confirmation
-- Organize videos into playlists
-- Batch operations support
+- **View videos with smart pagination** (50/100/200 per page)
+- **Toggle video protection status** (Public/Private) with instant feedback
+- Search videos by title or metadata
+- Real-time status updates
+- Optimistic UI updates for better user experience
+- Verified changes through IBM Dashboard
 
-### 🎮 Player Configuration
+### 🎮 Player Configuration *(Coming Soon)*
 - Customize player appearance
 - Configure autoplay and controls
 - Set color schemes and branding
 - Generate embed codes
-- Preview player configurations
 
-### 💬 Interactivity Controls
+### 💬 Interactivity Controls *(Coming Soon)*
 - Enable/disable live chat
 - Create and manage polls
 - Configure Q&A sessions
 - Moderation tools
-- Real-time interaction management
 
-### 📊 Stream Monitoring & Analytics
-- Real-time stream preview with embedded VLC player
-- Live viewer count tracking
-- Stream health metrics
-- Analytics dashboard with charts
+### 📊 Analytics & Monitoring *(Coming Soon)*
+- Stream monitoring dashboard
+- Viewer analytics
+- Performance metrics
 - Historical data visualization
-- Multi-channel monitoring support
 
-## Technology Stack
+## 🚀 Quick Start
 
-- **Python 3.9+**: Core application language
-- **PyQt6**: Modern GUI framework
-- **VLC**: Video playback and stream preview
-- **Matplotlib/PyQtGraph**: Data visualization
-- **Requests**: HTTP client for API communication
-
-## Prerequisites
+### Prerequisites
 
 - Python 3.9 or higher
-- VLC Media Player installed on your system
-- IBM Video Streaming API credentials (API key and secret)
+- IBM Video Streaming API credentials (OAuth 2.0 Client ID and Secret)
 
-## Installation
+### Installation
 
-### From Source
-
-1. Clone the repository:
+1. **Clone the repository**:
 ```bash
 git clone https://github.com/bofika/IBMVS.git
 cd IBMVS
 ```
 
-2. Create a virtual environment:
+2. **Create and activate virtual environment**:
 ```bash
 # On macOS/Linux:
 python3 -m venv venv
@@ -79,247 +69,186 @@ python -m venv venv
 venv\Scripts\activate
 ```
 
-3. Install dependencies:
+3. **Install dependencies**:
 ```bash
 pip install -r requirements.txt
 ```
 
-4. Run the application:
+4. **Start the application**:
 ```bash
-# On macOS/Linux (after activating venv):
-python src/main.py
+# On macOS/Linux:
+./start_web_app.sh
 
 # On Windows:
-python src/main.py
+start_web_app.bat
+
+# Or directly:
+python web_app.py
 ```
 
-### Pre-built Binaries
+5. **Access the application**:
+Open your web browser and navigate to:
+```
+http://localhost:8080
+```
 
-Download the latest release for your platform:
-- **macOS**: `IBM-Video-Manager-macOS.dmg`
-- **Windows**: `IBM-Video-Manager-Windows.exe`
-
-## Configuration
+## 📖 Configuration
 
 ### First-Time Setup
 
-1. Launch the application
-2. Go to **Settings** → **OAuth 2.0 Credentials**
+1. Open the application in your browser
+2. Click **Settings** in the sidebar
 3. Enter your IBM Video Streaming OAuth 2.0 credentials:
-   - Client ID (40-character string)
-   - Client Secret
-4. Click **Test Connection** to verify
-5. Click **OK** to save
+   - **Client ID** (40-character string)
+   - **Client Secret**
+4. Click **Save Credentials**
+5. Click **Test Connection** to verify
 
 ### Obtaining OAuth 2.0 Credentials
 
-To obtain OAuth 2.0 credentials:
-1. Log in to your IBM Video Streaming account
+1. Log in to your [IBM Video Streaming account](https://video.ibm.com/)
 2. Navigate to **Dashboard** → **API/Channel Settings**
 3. Create new **OAuth 2.0 client credentials**
-4. Copy the Client ID (40-character string) and Client Secret
-5. Keep these credentials secure - they provide full access to your account
+4. Copy the Client ID and Client Secret
+5. Keep these credentials secure
 
-**Note**: The application uses OAuth 2.0 Client Credentials flow for authentication. Access tokens are automatically managed and refreshed as needed.
+## 💡 Usage
 
-## Usage
+### Managing Videos
 
-### Managing Channels
-
-1. Click on **Channels** in the sidebar
-2. View all your channels in the list
-3. Use the toolbar buttons to:
-   - **Create**: Add a new channel
-   - **Edit**: Modify channel settings
-   - **Delete**: Remove a channel
-   - **Refresh**: Update the channel list
-
-### Uploading Videos
-
-1. Navigate to **Videos** panel
-2. Click **Upload Video**
-3. Select video file(s) from your computer
-4. Fill in metadata (title, description, tags)
-5. Choose target channel
-6. Click **Upload** and monitor progress
-
-### Monitoring Streams
-
-1. Go to **Monitor** panel
+1. Click **Videos** in the sidebar
 2. Select a channel from the dropdown
-3. View live stream preview
-4. Monitor real-time metrics:
-   - Current viewer count
-   - Stream bitrate
-   - Connection quality
-   - Viewer engagement
+3. Browse videos with pagination controls
+4. **Toggle video status**:
+   - Click "Make Private" to hide a video
+   - Click "Make Public" to publish a video
+   - Status updates instantly with visual feedback
+   - Changes are verified on IBM's servers
 
-### Configuring Players
+### Search and Filter
 
-1. Open **Players** panel
-2. Select a channel
-3. Customize player settings:
-   - Appearance (colors, logo)
-   - Behavior (autoplay, controls)
-   - Responsive design options
-4. Preview changes in real-time
-5. Save configuration
+- Use the search box to find specific videos
+- Adjust page size (50/100/200 videos)
+- Navigate with Previous/Next buttons
+- View total video count and current page
 
-### Managing Interactivity
+## 🏗️ Architecture
 
-1. Navigate to **Interactive** panel
-2. Enable/disable features:
-   - Live chat
-   - Polls
-   - Q&A sessions
-3. Configure moderation settings
-4. Monitor and moderate in real-time
+### Technology Stack
 
-## Project Structure
+- **Backend**: Flask (Python web framework)
+- **Frontend**: HTML5, Bootstrap 5, jQuery
+- **API Client**: Custom Python modules for IBM Video Streaming API
+- **Authentication**: OAuth 2.0 Client Credentials flow
+- **Storage**: System keyring for secure credential storage
+
+### Project Structure
 
 ```
-ibm-video-manager/
+IBMVS/
+├── web_app.py              # Flask application entry point
+├── start_web_app.sh        # macOS/Linux startup script
+├── start_web_app.bat       # Windows startup script
 ├── src/
-│   ├── main.py              # Application entry point
-│   ├── api/                 # API client modules
-│   ├── ui/                  # PyQt6 UI components
-│   ├── core/                # Core functionality
-│   └── utils/               # Utility functions
-├── resources/               # Icons, styles, assets
-├── tests/                   # Test suite
-├── docs/                    # Documentation
-├── requirements.txt         # Python dependencies
-└── README.md               # This file
+│   ├── api/                # API client modules
+│   │   ├── channels.py     # Channel management
+│   │   ├── videos.py       # Video management
+│   │   ├── client.py       # HTTP client
+│   │   └── ...
+│   └── core/               # Core functionality
+│       ├── auth.py         # OAuth 2.0 authentication
+│       ├── config.py       # Configuration management
+│       └── logger.py       # Logging system
+├── templates/              # HTML templates
+│   ├── base.html          # Base template
+│   ├── index.html         # Main dashboard
+│   └── settings.html      # Settings page
+├── static/                 # Static assets (CSS, JS)
+├── docs/                   # Documentation
+└── tests/                  # Test suite
 ```
 
-## Development
+## 🔧 Development
 
-### Setting Up Development Environment
+### Running in Development Mode
 
-1. Install development dependencies:
 ```bash
-pip install -r requirements-dev.txt
+# Enable debug mode
+export FLASK_ENV=development  # macOS/Linux
+set FLASK_ENV=development     # Windows
+
+python web_app.py
 ```
 
-2. Run tests:
+### Adding New Features
+
+1. **Backend**: Add API endpoints in `web_app.py`
+2. **Frontend**: Update templates in `templates/`
+3. **API Integration**: Extend modules in `src/api/`
+
+### Testing
+
 ```bash
+# Run tests
 pytest tests/
+
+# Run specific test file
+pytest tests/test_api/test_videos.py
 ```
 
-3. Run with debug logging:
-```bash
-python src/main.py --debug
-```
+## 📚 Documentation
 
-### Building from Source
+- **[WEB_APP_README.md](WEB_APP_README.md)** - Detailed web app documentation
+- **[CHANGELOG.md](CHANGELOG.md)** - Version history and changes
+- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Common issues and solutions
+- **[API_REFERENCE.md](API_REFERENCE.md)** - API endpoint documentation
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Contribution guidelines
 
-#### macOS
-```bash
-pyinstaller --windowed --name "IBM Video Manager" \
-  --icon resources/icons/app.icns \
-  src/main.py
-```
-
-#### Windows
-```bash
-pyinstaller --windowed --name "IBM Video Manager" ^
-  --icon resources/icons/app.ico ^
-  src/main.py
-```
-
-For comprehensive troubleshooting, see **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)**
-
-## Troubleshooting
+## 🐛 Troubleshooting
 
 ### Common Issues
 
-#### "python: command not found" (macOS)
-**Problem**: macOS uses `python3` instead of `python`
-
-**Solution**:
+#### Port Already in Use
 ```bash
-# Use python3 for all commands
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-python src/main.py  # After activation, 'python' works
-```
-
-**Alternative**: Create an alias in `~/.zshrc`:
-```bash
-echo 'alias python=python3' >> ~/.zshrc
-echo 'alias pip=pip3' >> ~/.zshrc
-source ~/.zshrc
-```
-
-#### Python Not Installed (macOS)
-**Solution**: Install via Homebrew:
-```bash
-# Install Homebrew
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-# Install Python 3
-brew install python3
+# Change port in web_app.py or use environment variable
+export PORT=8081
+python web_app.py
 ```
 
 #### "Failed to connect to API"
-- **Solution**: Verify your API credentials in Settings
-- Check your internet connection
-- Ensure API endpoints are accessible
+- Verify credentials in Settings
+- Test connection using the "Test Connection" button
+- Check internet connectivity
+- Review logs in terminal
 
-#### "VLC player not found"
-- **Solution**: Install VLC Media Player from https://www.videolan.org/
-- Ensure VLC is in your system PATH
-
-#### "Video upload fails"
-- **Solution**: Check video format compatibility
-- Verify file size limits
-- Ensure sufficient disk space
-
-#### PyQt6 Installation Issues
-**macOS**: If you get compilation errors:
-```bash
-pip install --upgrade pip setuptools wheel
-pip install PyQt6
-```
-
-**Windows**: Ensure you have Visual C++ redistributables installed
-
-#### Permission Denied Errors
-**macOS/Linux**:
-```bash
-chmod +x src/main.py
-```
-
-#### Virtual Environment Activation Issues
-**macOS/Linux**: If `source venv/bin/activate` fails:
-```bash
-# Try with explicit path
-. ./venv/bin/activate
-
-# Or use full path
-source /full/path/to/venv/bin/activate
-```
-
-**Windows**: If activation is blocked by execution policy:
-```powershell
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-```
+#### Video Status Not Changing
+- Ensure you have admin permissions on the IBM account
+- Check browser console for errors (F12)
+- Verify the change in IBM Dashboard
+- Review application logs
 
 ### Logs
 
-Application logs are stored in:
+Application logs are displayed in the terminal and stored in:
 - **macOS**: `~/Library/Application Support/IBM Video Manager/logs/`
 - **Windows**: `%APPDATA%\IBM Video Manager\logs\`
 
-## API Documentation
+## 🎯 Why Web-Based?
 
-For detailed IBM Video Streaming API documentation, visit:
-https://developers.video.ibm.com/
+The application was migrated from a Qt desktop application to a web-based interface to resolve persistent rendering issues on macOS. The web version offers:
 
-## Contributing
+- ✅ **Consistent behavior** across all platforms
+- ✅ **No rendering bugs** - tables and UI update correctly
+- ✅ **Better user experience** with instant visual feedback
+- ✅ **Easier maintenance** and development
+- ✅ **Remote access** capability
+- ✅ **Mobile-friendly** responsive design
 
-Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+For more details, see [WEB_APP_README.md](WEB_APP_README.md).
+
+## 🤝 Contributing
+
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
 ### Quick Start for Contributors
 
@@ -329,51 +258,53 @@ Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTIN
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+## 📄 License
 
-## License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Support
-
-For issues, questions, or suggestions:
-- Open an issue on GitHub
-- Contact: support@example.com
-
-## Acknowledgments
+## 🙏 Acknowledgments
 
 - IBM Video Streaming for providing the API
-- PyQt6 team for the excellent GUI framework
-- VLC team for the media player library
+- Flask team for the excellent web framework
+- Bootstrap team for the UI components
+- All contributors and users
 
-## Roadmap
+## 🗺️ Roadmap
 
-### Version 1.0 (Current)
-- ✅ Basic channel management
-- ✅ Video upload and management
-- ✅ Player configuration
-- ✅ Stream monitoring
-- ✅ Analytics dashboard
+### Version 1.1 (Current)
+- ✅ Web-based interface
+- ✅ Channel browsing
+- ✅ Video management with pagination
+- ✅ Video protection toggle (Public/Private)
+- ✅ Search functionality
+- ✅ Settings management
 
-### Version 1.1 (Planned)
-- [ ] Multi-account support
-- [ ] Batch operations
-- [ ] Advanced analytics with export
-- [ ] Scheduled streaming
-- [ ] Enhanced moderation tools
+### Version 1.2 (Planned)
+- [ ] Video upload with progress tracking
+- [ ] Batch operations (multi-select)
+- [ ] Advanced search and filtering
+- [ ] Player configuration UI
+- [ ] Analytics dashboard
 
 ### Version 2.0 (Future)
-- [ ] Mobile companion app
-- [ ] Plugin system
-- [ ] Custom themes
-- [ ] Automated workflows
-- [ ] Team collaboration features
+- [ ] Stream monitoring
+- [ ] Interactive features (chat, polls, Q&A)
+- [ ] Multi-account support
+- [ ] Scheduled operations
+- [ ] Export functionality
+- [ ] Dark/Light theme toggle
 
-## Screenshots
+## 📞 Support
 
-*Screenshots will be added after UI implementation*
+For issues, questions, or suggestions:
+- **GitHub Issues**: [https://github.com/bofika/IBMVS/issues](https://github.com/bofika/IBMVS/issues)
+- **Documentation**: Check the `docs/` folder
+- **API Documentation**: [https://developers.video.ibm.com/](https://developers.video.ibm.com/)
+
+## ⚠️ Disclaimer
+
+This application is not officially affiliated with IBM. It is an independent tool built using the public IBM Video Streaming API.
 
 ---
 
-**Note**: This application is not officially affiliated with IBM. It is an independent tool built using the public IBM Video Streaming API.
+**Made with ❤️ for the IBM Video Streaming community**
