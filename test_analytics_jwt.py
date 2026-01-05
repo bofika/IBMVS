@@ -4,7 +4,11 @@ Test script for Analytics API with JWT authentication.
 This script tests the JWT token authentication flow for the Analytics API.
 """
 import sys
+import os
 from datetime import datetime, timedelta
+
+# Add src directory to Python path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 from core.auth import auth_manager
 from core.logger import get_logger
