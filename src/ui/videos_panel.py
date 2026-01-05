@@ -202,6 +202,32 @@ class VideosPanel(BasePanel):
         self.page_size_combo.addItems(["50", "100", "200"])
         self.page_size_combo.setCurrentText("50")
         self.page_size_combo.currentTextChanged.connect(self.on_page_size_changed)
+        # Fix dropdown visibility on macOS
+        self.page_size_combo.setStyleSheet("""
+            QComboBox {
+                background-color: #2b2b2b;
+                color: white;
+                border: 1px solid #555;
+                padding: 5px;
+                min-width: 60px;
+            }
+            QComboBox::drop-down {
+                border: none;
+            }
+            QComboBox::down-arrow {
+                image: none;
+                border-left: 5px solid transparent;
+                border-right: 5px solid transparent;
+                border-top: 5px solid white;
+                margin-right: 5px;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #2b2b2b;
+                color: white;
+                selection-background-color: #3a3a3a;
+                border: 1px solid #555;
+            }
+        """)
         pagination_layout.addWidget(self.page_size_combo)
         
         pagination_layout.addStretch()
@@ -318,19 +344,31 @@ class VideosPanel(BasePanel):
                 include_private=True
             )
             
+            # Debug: Log the response structure
+            logger.debug(f"API Response keys: {response.keys()}")
+            
             videos = response.get('videos', [])
             paging = response.get('paging', {})
             
+            # Debug: Log paging info
+            logger.debug(f"Paging info: {paging}")
+            logger.debug(f"Number of videos: {len(videos)}")
+            
             # Update pagination
             self.current_page = page
-            self.total_pages = max(1, (paging.get('total', 0) + self.page_size - 1) // self.page_size)
+            total_videos = paging.get('total', len(videos))
+            self.total_pages = max(1, (total_videos + self.page_size - 1) // self.page_size)
             
-            self.page_label.setText(f"Page {self.current_page} of {self.total_pages} ({paging.get('total', 0)} videos)")
+            self.page_label.setText(f"Page {self.current_page} of {self.total_pages} ({total_videos} videos)")
             self.prev_page_btn.setEnabled(self.current_page > 1)
             self.next_page_btn.setEnabled(self.current_page < self.total_pages)
             
             # Update model - this will automatically refresh the view
             self.video_model.setVideos(videos)
+            
+            # Force view update
+            self.videos_table.viewport().update()
+            self.videos_table.update()
             
             logger.info(f"Loaded {len(videos)} videos for channel {self.current_channel_id} (page {page}/{self.total_pages})")
             
