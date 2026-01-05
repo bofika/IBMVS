@@ -37,11 +37,15 @@ A comprehensive cross-platform **web-based application** for managing IBM Video 
 - Configure Q&A sessions
 - Moderation tools
 
-### 📊 Analytics & Monitoring *(Coming Soon)*
-- Stream monitoring dashboard
-- Viewer analytics
-- Performance metrics
-- Historical data visualization
+### 📊 Analytics & Monitoring
+- **Comprehensive Analytics Dashboard** with JWT authentication
+- **Channel Analytics**: Views, unique viewers, watch time, peak viewers
+- **Video Analytics**: Performance metrics, completion rates, retention
+- **Live Stream Monitor**: Real-time viewer count, stream health, engagement
+- **Demographics**: Geographic distribution and device breakdown
+- **Flexible Date Ranges**: Custom date selection with quick presets
+- **Auto-refresh**: Configurable real-time updates for live streams
+- **Export Capabilities**: Export analytics data in JSON/CSV formats
 
 ## 🚀 Quick Start
 
@@ -198,11 +202,39 @@ pytest tests/test_api/test_videos.py
 
 ## 📚 Documentation
 
+- **[ANALYTICS_DASHBOARD.md](ANALYTICS_DASHBOARD.md)** - Analytics Dashboard guide with JWT authentication
 - **[WEB_APP_README.md](WEB_APP_README.md)** - Detailed web app documentation
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history and changes
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Common issues and solutions
 - **[API_REFERENCE.md](API_REFERENCE.md)** - API endpoint documentation
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - Contribution guidelines
+
+### Analytics Dashboard
+
+The Analytics Dashboard provides comprehensive insights into your channels, videos, and live streams:
+
+- **JWT Authentication**: Automatically handles JWT token authentication for Analytics API
+- **Three Main Views**:
+  - 📺 **Channel Analytics**: Total views, unique viewers, watch time, demographics
+  - 🎬 **Video Analytics**: Video performance, completion rates, engagement metrics
+  - 🔴 **Live Stream Monitor**: Real-time viewer count, stream health, live engagement
+- **Flexible Date Ranges**: Custom date selection or quick presets (Today, 7 Days, 30 Days, 90 Days)
+- **Auto-Refresh**: Configurable real-time updates for live stream monitoring
+- **Export**: Download analytics data in JSON or CSV format
+
+For detailed information, see [ANALYTICS_DASHBOARD.md](ANALYTICS_DASHBOARD.md).
+
+#### Testing Analytics
+
+Run the JWT authentication test:
+```bash
+python test_analytics_jwt.py
+```
+
+This verifies:
+- JWT token authentication is working
+- Analytics API endpoints are accessible
+- Data is being retrieved correctly
 
 ## 🐛 Troubleshooting
 

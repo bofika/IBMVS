@@ -1,5 +1,9 @@
 """
 Analytics and monitoring API operations.
+
+The Analytics API uses JWT authentication instead of standard OAuth tokens.
+All requests to the Analytics API must use JWT tokens obtained via the
+auth manager's get_jwt_token() method.
 """
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
@@ -12,7 +16,12 @@ logger = get_logger(__name__)
 
 
 class AnalyticsManager:
-    """Manages analytics and monitoring API operations."""
+    """
+    Manages analytics and monitoring API operations.
+    
+    Note: Analytics API requires JWT authentication, which is handled
+    automatically by the client's analytics_get() method.
+    """
     
     def __init__(self):
         self.client = client
@@ -51,7 +60,7 @@ class AnalyticsManager:
             params['metrics'] = ','.join(metrics)
         
         logger.info(f"Fetching metrics for channel {channel_id} ({start_date} to {end_date})")
-        response = self.client.get(
+        response = self.client.analytics_get(
             f'/channels/{channel_id}/metrics.json',
             params=params
         )
@@ -69,7 +78,7 @@ class AnalyticsManager:
             Current viewer information
         """
         logger.info(f"Fetching current viewers for channel: {channel_id}")
-        response = self.client.get(f'/channels/{channel_id}/viewers.json')
+        response = self.client.analytics_get(f'/channels/{channel_id}/viewers.json')
         
         return response.get('viewers', {})
     
@@ -84,7 +93,7 @@ class AnalyticsManager:
             Stream health information
         """
         logger.info(f"Fetching stream health for channel: {channel_id}")
-        response = self.client.get(f'/channels/{channel_id}/health.json')
+        response = self.client.analytics_get(f'/channels/{channel_id}/health.json')
         
         return response.get('health', {})
     
@@ -116,7 +125,7 @@ class AnalyticsManager:
         }
         
         logger.info(f"Fetching viewer demographics for channel: {channel_id}")
-        response = self.client.get(
+        response = self.client.analytics_get(
             f'/channels/{channel_id}/demographics.json',
             params=params
         )
@@ -151,7 +160,7 @@ class AnalyticsManager:
         }
         
         logger.info(f"Fetching engagement metrics for channel: {channel_id}")
-        response = self.client.get(
+        response = self.client.analytics_get(
             f'/channels/{channel_id}/engagement.json',
             params=params
         )
@@ -186,7 +195,7 @@ class AnalyticsManager:
         }
         
         logger.info(f"Fetching metrics for video: {video_id}")
-        response = self.client.get(
+        response = self.client.analytics_get(
             f'/videos/{video_id}/metrics.json',
             params=params
         )
@@ -221,7 +230,7 @@ class AnalyticsManager:
         }
         
         logger.info(f"Fetching peak viewers for channel: {channel_id}")
-        response = self.client.get(
+        response = self.client.analytics_get(
             f'/channels/{channel_id}/peak-viewers.json',
             params=params
         )
@@ -256,7 +265,7 @@ class AnalyticsManager:
         }
         
         logger.info(f"Fetching watch time for channel: {channel_id}")
-        response = self.client.get(
+        response = self.client.analytics_get(
             f'/channels/{channel_id}/watch-time.json',
             params=params
         )
@@ -294,7 +303,7 @@ class AnalyticsManager:
         }
         
         logger.info(f"Exporting metrics for channel {channel_id} as {format}")
-        response = self.client.get(
+        response = self.client.analytics_get(
             f'/channels/{channel_id}/metrics/export.json',
             params=params
         )

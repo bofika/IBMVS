@@ -34,6 +34,10 @@ class AuthManager:
         self._token_expiry: Optional[datetime] = None
         self._token_type: str = "Bearer"
         
+        # JWT token for Analytics API
+        self._jwt_token: Optional[str] = None
+        self._jwt_token_expiry: Optional[datetime] = None
+        
         # Try to load credentials from environment or keyring
         self._load_credentials()
     
@@ -292,6 +296,149 @@ class AuthManager:
         self._access_token = None
         self._token_expiry = None
         return self._request_access_token()
+    
+    def _request_jwt_token(self) -> bool:
+        """
+        Request a JWT token for Analytics API.
+        
+        The Analytics API requires JWT tokens instead of standard OAuth tokens.
+        This is obtained by setting token_type=jwt as a POST parameter.
+        
+        Returns:
+            True if JWT token was obtained successfully
+        """
+        if not self.has_credentials():
+            logger.error("No credentials available for JWT token request")
+            return False
+        
+        try:
+            logger.info("=" * 60)
+            logger.info("Requesting JWT token for Analytics API...")
+            logger.info(f"Token URL: {self.TOKEN_URL}")
+            
+            if not self._client_id or not self._client_secret:
+                logger.error("Client credentials are missing!")
+                return False
+            
+            logger.info(f"Client ID: {self._client_id[:8]}...{self._client_id[-8:]}")
+            
+            # Request JWT token with token_type=jwt parameter
+            # This MUST be sent as POST form data, not JSON
+            data = {
+                'grant_type': 'client_credentials',
+                'client_id': self._client_id,
+                'client_secret': self._client_secret,
+                'token_type': 'jwt',  # This is the key difference for Analytics API
+                'device_name': 'IBM Video Streaming Manager - Analytics'
+            }
+            
+            headers = {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+            
+            logger.info("Requesting JWT token (token_type=jwt)...")
+            response = requests.post(
+                self.TOKEN_URL,
+                data=data,
+                headers=headers,
+                timeout=30
+            )
+            
+            logger.info(f"Response status code: {response.status_code}")
+            
+            if response.status_code == 200:
+                token_data = response.json()
+                self._jwt_token = token_data.get('access_token')
+                expires_in = token_data.get('expires_in', 3600)
+                
+                # Set expiry time (subtract 5 minutes for safety)
+                self._jwt_token_expiry = datetime.now() + timedelta(seconds=expires_in - 300)
+                
+                logger.info(f"✓ JWT token obtained successfully!")
+                logger.info(f"  Expires in: {expires_in} seconds")
+                logger.info(f"  Token preview: {self._jwt_token[:20]}..." if self._jwt_token else "  No token received")
+                logger.info("=" * 60)
+                return True
+            else:
+                logger.error("=" * 60)
+                logger.error(f"✗ JWT token request FAILED!")
+                logger.error(f"  Status code: {response.status_code}")
+                logger.error(f"  Response body: {response.text}")
+                logger.error("=" * 60)
+                return False
+                
+        except Exception as e:
+            logger.error(f"Unexpected error during JWT token request: {e}", exc_info=True)
+            return False
+    
+    def get_jwt_token(self) -> Optional[str]:
+        """
+        Get valid JWT token for Analytics API requests.
+        Automatically requests new token if needed.
+        
+        Returns:
+            JWT token or None if unable to obtain
+        """
+        if not self.has_credentials():
+            logger.warning("No credentials available for JWT token")
+            return None
+        
+        # Check if we need a new JWT token
+        if not self.is_jwt_token_valid():
+            logger.debug("JWT token invalid or expired, requesting new token")
+            if not self._request_jwt_token():
+                logger.error("Failed to obtain JWT token")
+                return None
+        
+        return self._jwt_token
+    
+    def is_jwt_token_valid(self) -> bool:
+        """
+        Check if current JWT token is valid and not expired.
+        
+        Returns:
+            True if JWT token is valid and not expired
+        """
+        if not self._jwt_token:
+            logger.debug("No JWT token available")
+            return False
+        
+        if self._jwt_token_expiry and datetime.now() >= self._jwt_token_expiry:
+            logger.debug("JWT token expired")
+            return False
+        
+        return True
+    
+    def refresh_jwt_token(self) -> bool:
+        """
+        Force refresh of JWT token.
+        
+        Returns:
+            True if JWT token was refreshed successfully
+        """
+        logger.info("Forcing JWT token refresh")
+        self._jwt_token = None
+        self._jwt_token_expiry = None
+        return self._request_jwt_token()
+    
+    def get_analytics_auth_headers(self) -> Dict[str, str]:
+        """
+        Get authentication headers for Analytics API requests.
+        Uses JWT token instead of standard OAuth token.
+        
+        Returns:
+            Dictionary of headers with JWT Authorization bearer token
+        """
+        jwt_token = self.get_jwt_token()
+        if not jwt_token:
+            logger.warning("No valid JWT token available for Analytics API")
+            return {}
+        
+        return {
+            'Authorization': f'Bearer {jwt_token}',
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
     
     def get_auth_headers(self) -> Dict[str, str]:
         """

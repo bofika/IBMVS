@@ -32,8 +32,12 @@ logger = get_logger(__name__)
 class IBMVideoClient:
     """Base client for IBM Video Streaming API."""
     
+    # Analytics API uses a different base URL
+    ANALYTICS_BASE_URL = "https://analytics-api.video.ibm.com"
+    
     def __init__(self):
         self.base_url = config.get_api_base_url()
+        self.analytics_base_url = self.ANALYTICS_BASE_URL
         self.timeout = API_TIMEOUT
         self.session = self._create_session()
     
@@ -252,6 +256,103 @@ class IBMVideoClient:
             Response data
         """
         return self._request("PATCH", endpoint, **kwargs)
+    
+    def _get_analytics_headers(self) -> Dict[str, str]:
+        """
+        Get request headers for Analytics API with JWT authentication.
+        
+        Returns:
+            Dictionary of headers with JWT token
+        """
+        headers = auth_manager.get_analytics_auth_headers()
+        
+        if not headers:
+            logger.warning("No Analytics API authentication headers available")
+        
+        return headers
+    
+    def _analytics_request(
+        self,
+        method: str,
+        endpoint: str,
+        params: Optional[Dict[str, Any]] = None,
+        json: Optional[Dict[str, Any]] = None,
+        data: Optional[Any] = None,
+        **kwargs
+    ) -> Dict[str, Any]:
+        """
+        Make an Analytics API request with JWT authentication.
+        
+        Args:
+            method: HTTP method
+            endpoint: API endpoint (relative to analytics base URL)
+            params: Query parameters
+            json: JSON data
+            data: Form data
+            **kwargs: Additional arguments for requests
+            
+        Returns:
+            Response data
+            
+        Raises:
+            Various APIError subclasses
+        """
+        url = f"{self.analytics_base_url}{endpoint}"
+        headers = self._get_analytics_headers()
+        
+        logger.debug(f"Analytics API {method} {url}")
+        
+        try:
+            response = self.session.request(
+                method=method,
+                url=url,
+                headers=headers,
+                params=params,
+                json=json,
+                data=data,
+                timeout=self.timeout,
+                **kwargs
+            )
+            
+            return self._handle_response(response)
+            
+        except requests.exceptions.Timeout:
+            logger.error(f"Analytics API request timeout: {url}")
+            raise APITimeoutError(f"Request timed out after {self.timeout} seconds")
+        
+        except requests.exceptions.ConnectionError as e:
+            logger.error(f"Analytics API connection error: {e}")
+            raise NetworkError("Failed to connect to Analytics API server")
+        
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Analytics API request error: {e}")
+            raise APIError(f"Request failed: {str(e)}")
+    
+    def analytics_get(self, endpoint: str, **kwargs) -> Dict[str, Any]:
+        """
+        Make a GET request to Analytics API.
+        
+        Args:
+            endpoint: API endpoint
+            **kwargs: Additional arguments
+            
+        Returns:
+            Response data
+        """
+        return self._analytics_request("GET", endpoint, **kwargs)
+    
+    def analytics_post(self, endpoint: str, **kwargs) -> Dict[str, Any]:
+        """
+        Make a POST request to Analytics API.
+        
+        Args:
+            endpoint: API endpoint
+            **kwargs: Additional arguments
+            
+        Returns:
+            Response data
+        """
+        return self._analytics_request("POST", endpoint, **kwargs)
     
     def close(self):
         """Close the session."""
