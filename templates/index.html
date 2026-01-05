@@ -1,0 +1,405 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - IBM Video Streaming Manager{% endblock %}
+
+{% block content %}
+<div id="dashboard-section">
+    <h1>Dashboard</h1>
+    <p class="lead">Welcome to IBM Video Streaming Manager</p>
+    
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-collection-play"></i> Channels</h5>
+                    <p class="card-text">Manage your video channels</p>
+                    <button class="btn btn-primary" onclick="loadChannels()">View Channels</button>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-camera-video"></i> Videos</h5>
+                    <p class="card-text">Manage your videos</p>
+                    <button class="btn btn-primary" onclick="showVideosSection()">View Videos</button>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-gear"></i> Settings</h5>
+                    <p class="card-text">Configure API credentials</p>
+                    <a href="{{ url_for('settings') }}" class="btn btn-primary">Go to Settings</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Channels Section -->
+<div id="channels-section" style="display: none;">
+    <h1>Channels</h1>
+    <div class="mb-3">
+        <button class="btn btn-secondary" onclick="showDashboard()"><i class="bi bi-arrow-left"></i> Back</button>
+        <button class="btn btn-primary" onclick="loadChannels()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+    </div>
+    
+    <div id="channels-list" class="row">
+        <!-- Channels will be loaded here -->
+    </div>
+</div>
+
+<!-- Videos Section -->
+<div id="videos-section" style="display: none;">
+    <h1>Video Management</h1>
+    
+    <div class="mb-3">
+        <button class="btn btn-secondary" onclick="showDashboard()"><i class="bi bi-arrow-left"></i> Back</button>
+        <button class="btn btn-primary" onclick="loadVideos()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+    </div>
+    
+    <!-- Channel Selector -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <label for="channel-select" class="form-label">Select Channel:</label>
+                    <select id="channel-select" class="form-select" onchange="onChannelChange()">
+                        <option value="">-- Select a channel --</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="page-size-select" class="form-label">Videos per page:</label>
+                    <select id="page-size-select" class="form-select" onchange="onPageSizeChange()">
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                        <option value="200">200</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="search-input" class="form-label">Search:</label>
+                    <input type="text" id="search-input" class="form-control" placeholder="Search videos..." onkeyup="onSearchChange()">
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Videos Table -->
+    <div class="card">
+        <div class="card-body">
+            <div id="videos-loading" class="text-center" style="display: none;">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+            
+            <div id="videos-table-container">
+                <table class="table table-dark table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Title</th>
+                            <th>Duration</th>
+                            <th>Views</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="videos-table-body">
+                        <tr>
+                            <td colspan="6" class="text-center">Select a channel to view videos</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div id="pagination-info">Page 1 of 1 (0 videos)</div>
+                <div>
+                    <button id="prev-page-btn" class="btn btn-secondary" onclick="loadPreviousPage()" disabled>
+                        <i class="bi bi-chevron-left"></i> Previous
+                    </button>
+                    <button id="next-page-btn" class="btn btn-secondary" onclick="loadNextPage()" disabled>
+                        Next <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alert Container -->
+<div id="alert-container"></div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentChannelId = null;
+let currentPage = 1;
+let totalPages = 1;
+let pageSize = 50;
+let searchQuery = '';
+
+// Show/Hide sections
+function showDashboard() {
+    document.getElementById('dashboard-section').style.display = 'block';
+    document.getElementById('channels-section').style.display = 'none';
+    document.getElementById('videos-section').style.display = 'none';
+}
+
+function showVideosSection() {
+    document.getElementById('dashboard-section').style.display = 'none';
+    document.getElementById('channels-section').style.display = 'none';
+    document.getElementById('videos-section').style.display = 'block';
+    loadChannelsForSelect();
+}
+
+// Load channels
+function loadChannels() {
+    document.getElementById('dashboard-section').style.display = 'none';
+    document.getElementById('channels-section').style.display = 'block';
+    document.getElementById('videos-section').style.display = 'none';
+    
+    $.ajax({
+        url: '/api/channels',
+        method: 'GET',
+        success: function(response) {
+            const channelsList = document.getElementById('channels-list');
+            channelsList.innerHTML = '';
+            
+            const channels = response.channels || [];
+            channels.forEach(channel => {
+                const card = `
+                    <div class="col-md-4 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">${channel.title || 'Untitled'}</h5>
+                                <p class="card-text">ID: ${channel.id}</p>
+                                <button class="btn btn-primary btn-sm" onclick="selectChannelForVideos('${channel.id}', '${channel.title}')">
+                                    View Videos
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                channelsList.innerHTML += card;
+            });
+        },
+        error: function(xhr) {
+            showAlert('Error loading channels: ' + (xhr.responseJSON?.error || 'Unknown error'), 'danger');
+        }
+    });
+}
+
+// Load channels for select dropdown
+function loadChannelsForSelect() {
+    $.ajax({
+        url: '/api/channels',
+        method: 'GET',
+        success: function(response) {
+            const select = document.getElementById('channel-select');
+            select.innerHTML = '<option value="">-- Select a channel --</option>';
+            
+            const channels = response.channels || [];
+            channels.forEach(channel => {
+                const option = document.createElement('option');
+                option.value = channel.id;
+                option.textContent = channel.title || 'Untitled';
+                select.appendChild(option);
+            });
+        },
+        error: function(xhr) {
+            showAlert('Error loading channels: ' + (xhr.responseJSON?.error || 'Unknown error'), 'danger');
+        }
+    });
+}
+
+// Select channel and show videos
+function selectChannelForVideos(channelId, channelTitle) {
+    showVideosSection();
+    document.getElementById('channel-select').value = channelId;
+    currentChannelId = channelId;
+    currentPage = 1;
+    loadVideos();
+}
+
+// Channel change handler
+function onChannelChange() {
+    const select = document.getElementById('channel-select');
+    currentChannelId = select.value;
+    if (currentChannelId) {
+        currentPage = 1;
+        loadVideos();
+    }
+}
+
+// Page size change handler
+function onPageSizeChange() {
+    pageSize = parseInt(document.getElementById('page-size-select').value);
+    currentPage = 1;
+    loadVideos();
+}
+
+// Search change handler
+let searchTimeout;
+function onSearchChange() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        searchQuery = document.getElementById('search-input').value;
+        currentPage = 1;
+        loadVideos();
+    }, 500);
+}
+
+// Load videos
+function loadVideos() {
+    if (!currentChannelId) {
+        return;
+    }
+    
+    document.getElementById('videos-loading').style.display = 'block';
+    document.getElementById('videos-table-container').style.display = 'none';
+    
+    const params = {
+        page: currentPage,
+        page_size: pageSize
+    };
+    if (searchQuery) {
+        params.search = searchQuery;
+    }
+    
+    $.ajax({
+        url: `/api/channels/${currentChannelId}/videos`,
+        method: 'GET',
+        data: params,
+        success: function(response) {
+            document.getElementById('videos-loading').style.display = 'none';
+            document.getElementById('videos-table-container').style.display = 'block';
+            
+            const videos = response.videos || [];
+            const paging = response.paging || {};
+            const total = paging.total || videos.length;
+            
+            totalPages = Math.max(1, Math.ceil(total / pageSize));
+            
+            // Update pagination info
+            document.getElementById('pagination-info').textContent = 
+                `Page ${currentPage} of ${totalPages} (${total} videos)`;
+            document.getElementById('prev-page-btn').disabled = currentPage <= 1;
+            document.getElementById('next-page-btn').disabled = currentPage >= totalPages;
+            
+            // Update table
+            const tbody = document.getElementById('videos-table-body');
+            tbody.innerHTML = '';
+            
+            if (videos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">No videos found</td></tr>';
+                return;
+            }
+            
+            videos.forEach(video => {
+                const isPublic = video.protect === 'public';
+                const statusClass = isPublic ? 'status-public' : 'status-private';
+                const statusText = isPublic ? 'Public' : 'Private';
+                const toggleBtnClass = isPublic ? 'btn-warning' : 'btn-success';
+                const toggleBtnText = isPublic ? 'Make Private' : 'Make Public';
+                
+                const duration = formatDuration(video.length);
+                
+                const row = `
+                    <tr id="video-row-${video.id}">
+                        <td>${video.id}</td>
+                        <td>${video.title || 'Untitled'}</td>
+                        <td>${duration}</td>
+                        <td>${video.views || 0}</td>
+                        <td class="${statusClass}">${statusText}</td>
+                        <td>
+                            <button class="btn ${toggleBtnClass} btn-sm" onclick="toggleVideoStatus('${video.id}', ${isPublic})">
+                                ${toggleBtnText}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        },
+        error: function(xhr) {
+            document.getElementById('videos-loading').style.display = 'none';
+            document.getElementById('videos-table-container').style.display = 'block';
+            showAlert('Error loading videos: ' + (xhr.responseJSON?.error || 'Unknown error'), 'danger');
+        }
+    });
+}
+
+// Toggle video status
+function toggleVideoStatus(videoId, isCurrentlyPublic) {
+    const makePrivate = isCurrentlyPublic;
+    
+    $.ajax({
+        url: `/api/videos/${videoId}/protection`,
+        method: 'PUT',
+        contentType: 'application/json',
+        data: JSON.stringify({ is_private: makePrivate }),
+        success: function(response) {
+            showAlert(`Video status changed to ${makePrivate ? 'private' : 'public'}`, 'success');
+            // Reload videos after a short delay
+            setTimeout(() => loadVideos(), 1000);
+        },
+        error: function(xhr) {
+            showAlert('Error updating video status: ' + (xhr.responseJSON?.error || 'Unknown error'), 'danger');
+        }
+    });
+}
+
+// Pagination
+function loadPreviousPage() {
+    if (currentPage > 1) {
+        currentPage--;
+        loadVideos();
+    }
+}
+
+function loadNextPage() {
+    if (currentPage < totalPages) {
+        currentPage++;
+        loadVideos();
+    }
+}
+
+// Helper functions
+function formatDuration(seconds) {
+    if (!seconds || seconds === '0') return '0:00';
+    const sec = parseInt(seconds);
+    const hours = Math.floor(sec / 3600);
+    const minutes = Math.floor((sec % 3600) / 60);
+    const secs = sec % 60;
+    
+    if (hours > 0) {
+        return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+}
+
+function showAlert(message, type) {
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    document.getElementById('alert-container').innerHTML = alertHtml;
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        const alert = document.querySelector('.alert');
+        if (alert) {
+            alert.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

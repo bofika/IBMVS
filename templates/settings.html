@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - IBM Video Streaming Manager{% endblock %}
+
+{% block content %}
+<h1>Settings</h1>
+<p class="lead">Configure your IBM Video Streaming API credentials</p>
+
+<div class="row mt-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">API Credentials</h5>
+                
+                <form id="credentials-form">
+                    <div class="mb-3">
+                        <label for="client-id" class="form-label">Client ID</label>
+                        <input type="text" class="form-control" id="client-id" placeholder="Enter your Client ID" required>
+                        <div class="form-text">Your IBM Video Streaming API Client ID (40 characters)</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="client-secret" class="form-label">Client Secret</label>
+                        <input type="password" class="form-control" id="client-secret" placeholder="Enter your Client Secret" required>
+                        <div class="form-text">Your IBM Video Streaming API Client Secret (40 characters)</div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Save Credentials
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="testConnection()">
+                            <i class="bi bi-check-circle"></i> Test Connection
+                        </button>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to Dashboard
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5 class="card-title">How to Get API Credentials</h5>
+                <ol>
+                    <li>Go to <a href="https://video.ibm.com/dashboard/integrations/api-access" target="_blank" class="text-primary">IBM Video Streaming API Access</a></li>
+                    <li>Create a new application or use an existing one</li>
+                    <li>Copy the Client ID and Client Secret</li>
+                    <li>Paste them into the form above</li>
+                    <li>Click "Save Credentials" and then "Test Connection"</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Status</h5>
+                <div id="status-indicator">
+                    <div class="spinner-border spinner-border-sm" role="status">
+                        <span class="visually-hidden">Checking...</span>
+                    </div>
+                    Checking credentials...
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alert Container -->
+<div id="alert-container" class="mt-3"></div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Check credentials status on page load
+$(document).ready(function() {
+    checkCredentialsStatus();
+});
+
+// Check if credentials are saved
+function checkCredentialsStatus() {
+    $.ajax({
+        url: '/api/auth/credentials',
+        method: 'GET',
+        success: function(response) {
+            const statusDiv = document.getElementById('status-indicator');
+            if (response.has_credentials) {
+                statusDiv.innerHTML = '<i class="bi bi-check-circle-fill text-success"></i> Credentials configured';
+            } else {
+                statusDiv.innerHTML = '<i class="bi bi-exclamation-circle-fill text-warning"></i> No credentials configured';
+            }
+        },
+        error: function() {
+            const statusDiv = document.getElementById('status-indicator');
+            statusDiv.innerHTML = '<i class="bi bi-x-circle-fill text-danger"></i> Error checking status';
+        }
+    });
+}
+
+// Save credentials
+$('#credentials-form').on('submit', function(e) {
+    e.preventDefault();
+    
+    const clientId = document.getElementById('client-id').value.trim();
+    const clientSecret = document.getElementById('client-secret').value.trim();
+    
+    if (!clientId || !clientSecret) {
+        showAlert('Please enter both Client ID and Client Secret', 'warning');
+        return;
+    }
+    
+    if (clientId.length !== 40) {
+        showAlert('Client ID must be exactly 40 characters', 'warning');
+        return;
+    }
+    
+    if (clientSecret.length !== 40) {
+        showAlert('Client Secret must be exactly 40 characters', 'warning');
+        return;
+    }
+    
+    $.ajax({
+        url: '/api/auth/credentials',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            client_id: clientId,
+            client_secret: clientSecret
+        }),
+        success: function(response) {
+            showAlert('Credentials saved successfully!', 'success');
+            checkCredentialsStatus();
+            // Clear the form
+            document.getElementById('credentials-form').reset();
+        },
+        error: function(xhr) {
+            showAlert('Error saving credentials: ' + (xhr.responseJSON?.error || 'Unknown error'), 'danger');
+        }
+    });
+});
+
+// Test connection
+function testConnection() {
+    const statusDiv = document.getElementById('status-indicator');
+    statusDiv.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div> Testing connection...';
+    
+    $.ajax({
+        url: '/api/auth/test',
+        method: 'POST',
+        success: function(response) {
+            showAlert('Connection successful! API is working correctly.', 'success');
+            statusDiv.innerHTML = '<i class="bi bi-check-circle-fill text-success"></i> Connection successful';
+        },
+        error: function(xhr) {
+            showAlert('Connection failed: ' + (xhr.responseJSON?.error || 'Unknown error'), 'danger');
+            statusDiv.innerHTML = '<i class="bi bi-x-circle-fill text-danger"></i> Connection failed';
+        }
+    });
+}
+
+// Show alert
+function showAlert(message, type) {
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    document.getElementById('alert-container').innerHTML = alertHtml;
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        const alert = document.querySelector('.alert');
+        if (alert) {
+            alert.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}
