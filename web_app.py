@@ -300,11 +300,32 @@ def api_channel_analytics(channel_id):
         days = request.args.get('days', 7, type=int)
         start_date = datetime.utcnow() - timedelta(days=days)
         
-        metrics = analytics_manager.get_channel_metrics(
+        raw_metrics = analytics_manager.get_channel_metrics(
             channel_id=channel_id,
             start_date=start_date
         )
-        return jsonify(metrics)
+        
+        # Transform JSON API format to simple format
+        # API returns: {"data": [{"attributes": {"value": 123}}]}
+        # We need: {"total_views": 123, "data": [...]}
+        transformed = {
+            'total_views': 0,
+            'unique_viewers': 0,
+            'peak_viewers': 0,
+            'watch_time': 0,
+            'data': []
+        }
+        
+        if isinstance(raw_metrics, dict) and 'data' in raw_metrics:
+            data_array = raw_metrics.get('data', [])
+            if data_array and len(data_array) > 0:
+                # Get the summary value from first item
+                first_item = data_array[0]
+                if isinstance(first_item, dict) and 'attributes' in first_item:
+                    attrs = first_item['attributes']
+                    transformed['total_views'] = attrs.get('value', 0)
+        
+        return jsonify(transformed)
     except Exception as e:
         logger.error(f"Error fetching analytics for channel {channel_id}: {e}")
         return jsonify({'error': str(e)}), 500
@@ -319,11 +340,69 @@ def api_channel_demographics(channel_id):
         days = request.args.get('days', 7, type=int)
         start_date = datetime.utcnow() - timedelta(days=days)
         
-        demographics = analytics_manager.get_viewer_demographics(
-            channel_id=channel_id,
-            start_date=start_date
+        # Get country and device data
+        country_data = analytics_manager.get_total_views(
+            content_type='live',
+            content_id=channel_id,
+            start_date=start_date,
+            dimension='country'
         )
-        return jsonify(demographics)
+        
+        device_data = analytics_manager.get_total_views(
+            content_type='live',
+            content_id=channel_id,
+            start_date=start_date,
+            dimension='device'
+        )
+        
+        # Transform to simple format
+        countries = []
+        devices = []
+        
+        # Parse country data
+        if isinstance(country_data, dict) and 'data' in country_data:
+            total_views = sum(
+                item.get('attributes', {}).get('value', 0)
+                for item in country_data.get('data', [])
+            )
+            for item in country_data.get('data', []):
+                attrs = item.get('attributes', {})
+                value = attrs.get('value', 0)
+                country_name = attrs.get('country', 'Unknown')
+                if total_views > 0:
+                    percentage = (value / total_views) * 100
+                    countries.append({
+                        'name': country_name,
+                        'views': value,
+                        'percentage': percentage
+                    })
+        
+        # Parse device data
+        if isinstance(device_data, dict) and 'data' in device_data:
+            total_views = sum(
+                item.get('attributes', {}).get('value', 0)
+                for item in device_data.get('data', [])
+            )
+            for item in device_data.get('data', []):
+                attrs = item.get('attributes', {})
+                value = attrs.get('value', 0)
+                device_name = attrs.get('device', 'Unknown')
+                if total_views > 0:
+                    percentage = (value / total_views) * 100
+                    devices.append({
+                        'name': device_name,
+                        'views': value,
+                        'percentage': percentage
+                    })
+        
+        # Sort by views descending
+        countries.sort(key=lambda x: x['views'], reverse=True)
+        devices.sort(key=lambda x: x['views'], reverse=True)
+        
+        return jsonify({
+            'countries': countries,
+            'devices': devices
+        })
     except Exception as e:
         logger.error(f"Error fetching demographics for channel {channel_id}: {e}")
         return jsonify({'error': str(e)}), 500

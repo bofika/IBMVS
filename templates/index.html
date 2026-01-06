@@ -687,30 +687,23 @@ function displayAnalytics(metrics, demographics) {
     document.getElementById('analytics-loading').style.display = 'none';
     document.getElementById('analytics-content').style.display = 'block';
     
-    // Calculate summary statistics from data
-    const data = metrics.data || [];
-    let totalViews = 0;
-    let totalUniqueViewers = 0;
-    let totalWatchTime = 0;
-    let peakViewers = 0;
-    
-    data.forEach(item => {
-        totalViews += parseInt(item.views || 0);
-        totalUniqueViewers += parseInt(item.unique_viewers || 0);
-        totalWatchTime += parseInt(item.watch_time || 0);
-        peakViewers = Math.max(peakViewers, parseInt(item.peak_viewers || 0));
-    });
+    // Extract metrics from transformed response
+    const totalViews = metrics.total_views || 0;
+    const uniqueViewers = metrics.unique_viewers || 0;
+    const peakViewers = metrics.peak_viewers || 0;
+    const watchTime = metrics.watch_time || 0;
     
     // Update summary cards
     document.getElementById('total-views').textContent = formatNumber(totalViews);
-    document.getElementById('unique-viewers').textContent = formatNumber(totalUniqueViewers);
+    document.getElementById('unique-viewers').textContent = formatNumber(uniqueViewers);
     document.getElementById('peak-viewers').textContent = formatNumber(peakViewers);
-    document.getElementById('watch-time').textContent = formatWatchTime(totalWatchTime);
+    document.getElementById('watch-time').textContent = formatWatchTime(watchTime);
     
     // Display demographics
     displayDemographics(demographics);
     
-    // Display detailed metrics table
+    // Display detailed metrics table (if available)
+    const data = metrics.data || [];
     displayMetricsTable(data);
 }
 
