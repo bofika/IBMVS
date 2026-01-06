@@ -29,6 +29,15 @@
         <div class="col-md-4">
             <div class="card">
                 <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-graph-up"></i> Analytics</h5>
+                    <p class="card-text">View channel analytics</p>
+                    <button class="btn btn-primary" onclick="showAnalyticsSection()">View Analytics</button>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
                     <h5 class="card-title"><i class="bi bi-gear"></i> Settings</h5>
                     <p class="card-text">Configure API credentials</p>
                     <a href="{{ url_for('settings') }}" class="btn btn-primary">Go to Settings</a>
@@ -131,6 +140,142 @@
     </div>
 </div>
 
+<!-- Analytics Section -->
+<div id="analytics-section" style="display: none;">
+    <h1>📊 Analytics Dashboard</h1>
+    
+    <div class="mb-3">
+        <button class="btn btn-secondary" onclick="showDashboard()"><i class="bi bi-arrow-left"></i> Back</button>
+        <button class="btn btn-primary" onclick="refreshAnalytics()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+    </div>
+    
+    <!-- Channel Selector and Date Range -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <label for="analytics-channel-select" class="form-label">Select Channel:</label>
+                    <select id="analytics-channel-select" class="form-select" onchange="onAnalyticsChannelChange()">
+                        <option value="">-- Select a channel --</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="analytics-date-range" class="form-label">Date Range:</label>
+                    <select id="analytics-date-range" class="form-select" onchange="onDateRangeChange()">
+                        <option value="7">Last 7 days</option>
+                        <option value="30" selected>Last 30 days</option>
+                        <option value="90">Last 90 days</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button class="btn btn-success w-100" onclick="exportAnalytics()">
+                        <i class="bi bi-download"></i> Export Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Analytics Loading -->
+    <div id="analytics-loading" class="text-center" style="display: none;">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2">Loading analytics data...</p>
+    </div>
+    
+    <!-- Analytics Content -->
+    <div id="analytics-content" style="display: none;">
+        <!-- Summary Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">Total Views</h6>
+                        <h2 id="total-views" class="card-title">-</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">Unique Viewers</h6>
+                        <h2 id="unique-viewers" class="card-title">-</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">Peak Viewers</h6>
+                        <h2 id="peak-viewers" class="card-title">-</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">Watch Time</h6>
+                        <h2 id="watch-time" class="card-title">-</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Demographics -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5><i class="bi bi-geo-alt"></i> Top Countries</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="countries-list">
+                            <p class="text-muted">No data available</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5><i class="bi bi-phone"></i> Top Devices</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="devices-list">
+                            <p class="text-muted">No data available</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Detailed Metrics Table -->
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-table"></i> Detailed Metrics</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-dark table-hover">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Views</th>
+                            <th>Unique Viewers</th>
+                            <th>Watch Time (hrs)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="metrics-table-body">
+                        <tr>
+                            <td colspan="4" class="text-center">Select a channel to view analytics</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Alert Container -->
 <div id="alert-container"></div>
 
@@ -149,6 +294,7 @@ function showDashboard() {
     document.getElementById('dashboard-section').style.display = 'block';
     document.getElementById('channels-section').style.display = 'none';
     document.getElementById('videos-section').style.display = 'none';
+    document.getElementById('analytics-section').style.display = 'none';
 }
 
 function showVideosSection() {
@@ -442,6 +588,224 @@ function showAlert(message, type) {
             alert.remove();
         }
     }, 5000);
+}
+
+// Analytics Section
+let currentAnalyticsChannelId = null;
+let currentDateRange = 30;
+
+function showAnalyticsSection() {
+    document.getElementById('dashboard-section').style.display = 'none';
+    document.getElementById('channels-section').style.display = 'none';
+    document.getElementById('videos-section').style.display = 'none';
+    document.getElementById('analytics-section').style.display = 'block';
+    loadChannelsForAnalytics();
+}
+
+function loadChannelsForAnalytics() {
+    $.ajax({
+        url: '/api/channels',
+        method: 'GET',
+        success: function(response) {
+            const select = document.getElementById('analytics-channel-select');
+            select.innerHTML = '<option value="">-- Select a channel --</option>';
+            
+            const channels = response.channels || [];
+            channels.forEach(channel => {
+                const option = document.createElement('option');
+                option.value = channel.id;
+                option.textContent = channel.title || 'Untitled';
+                select.appendChild(option);
+            });
+        },
+        error: function(xhr) {
+            showAlert('Error loading channels: ' + (xhr.responseJSON?.error || 'Unknown error'), 'danger');
+        }
+    });
+}
+
+function onAnalyticsChannelChange() {
+    const select = document.getElementById('analytics-channel-select');
+    currentAnalyticsChannelId = select.value;
+    if (currentAnalyticsChannelId) {
+        loadAnalytics();
+    }
+}
+
+function onDateRangeChange() {
+    currentDateRange = parseInt(document.getElementById('analytics-date-range').value);
+    if (currentAnalyticsChannelId) {
+        loadAnalytics();
+    }
+}
+
+function refreshAnalytics() {
+    if (currentAnalyticsChannelId) {
+        loadAnalytics();
+    } else {
+        showAlert('Please select a channel first', 'warning');
+    }
+}
+
+function loadAnalytics() {
+    if (!currentAnalyticsChannelId) {
+        return;
+    }
+    
+    document.getElementById('analytics-loading').style.display = 'block';
+    document.getElementById('analytics-content').style.display = 'none';
+    
+    // Load metrics
+    $.ajax({
+        url: `/api/analytics/channels/${currentAnalyticsChannelId}/metrics`,
+        method: 'GET',
+        data: { days: currentDateRange },
+        success: function(metricsResponse) {
+            // Load demographics
+            $.ajax({
+                url: `/api/analytics/channels/${currentAnalyticsChannelId}/demographics`,
+                method: 'GET',
+                data: { days: currentDateRange },
+                success: function(demoResponse) {
+                    displayAnalytics(metricsResponse, demoResponse);
+                },
+                error: function(xhr) {
+                    // Show metrics even if demographics fail
+                    displayAnalytics(metricsResponse, {});
+                    showAlert('Warning: Could not load demographics', 'warning');
+                }
+            });
+        },
+        error: function(xhr) {
+            document.getElementById('analytics-loading').style.display = 'none';
+            showAlert('Error loading analytics: ' + (xhr.responseJSON?.error || 'Unknown error'), 'danger');
+        }
+    });
+}
+
+function displayAnalytics(metrics, demographics) {
+    document.getElementById('analytics-loading').style.display = 'none';
+    document.getElementById('analytics-content').style.display = 'block';
+    
+    // Calculate summary statistics from data
+    const data = metrics.data || [];
+    let totalViews = 0;
+    let totalUniqueViewers = 0;
+    let totalWatchTime = 0;
+    let peakViewers = 0;
+    
+    data.forEach(item => {
+        totalViews += parseInt(item.views || 0);
+        totalUniqueViewers += parseInt(item.unique_viewers || 0);
+        totalWatchTime += parseInt(item.watch_time || 0);
+        peakViewers = Math.max(peakViewers, parseInt(item.peak_viewers || 0));
+    });
+    
+    // Update summary cards
+    document.getElementById('total-views').textContent = formatNumber(totalViews);
+    document.getElementById('unique-viewers').textContent = formatNumber(totalUniqueViewers);
+    document.getElementById('peak-viewers').textContent = formatNumber(peakViewers);
+    document.getElementById('watch-time').textContent = formatWatchTime(totalWatchTime);
+    
+    // Display demographics
+    displayDemographics(demographics);
+    
+    // Display detailed metrics table
+    displayMetricsTable(data);
+}
+
+function displayDemographics(demographics) {
+    // Countries
+    const countriesList = document.getElementById('countries-list');
+    const countries = demographics.countries || [];
+    
+    if (countries.length === 0) {
+        countriesList.innerHTML = '<p class="text-muted">No data available</p>';
+    } else {
+        let html = '<div class="list-group list-group-flush">';
+        countries.slice(0, 10).forEach(country => {
+            const percentage = country.percentage || 0;
+            html += `
+                <div class="list-group-item bg-transparent border-0 d-flex justify-content-between align-items-center">
+                    <span>${country.name || 'Unknown'}</span>
+                    <span class="badge bg-primary rounded-pill">${percentage.toFixed(1)}%</span>
+                </div>
+            `;
+        });
+        html += '</div>';
+        countriesList.innerHTML = html;
+    }
+    
+    // Devices
+    const devicesList = document.getElementById('devices-list');
+    const devices = demographics.devices || [];
+    
+    if (devices.length === 0) {
+        devicesList.innerHTML = '<p class="text-muted">No data available</p>';
+    } else {
+        let html = '<div class="list-group list-group-flush">';
+        devices.forEach(device => {
+            const percentage = device.percentage || 0;
+            html += `
+                <div class="list-group-item bg-transparent border-0 d-flex justify-content-between align-items-center">
+                    <span>${device.name || 'Unknown'}</span>
+                    <span class="badge bg-primary rounded-pill">${percentage.toFixed(1)}%</span>
+                </div>
+            `;
+        });
+        html += '</div>';
+        devicesList.innerHTML = html;
+    }
+}
+
+function displayMetricsTable(data) {
+    const tbody = document.getElementById('metrics-table-body');
+    
+    if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center">No data available</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = '';
+    data.forEach(item => {
+        const date = item.date || 'N/A';
+        const views = formatNumber(item.views || 0);
+        const uniqueViewers = formatNumber(item.unique_viewers || 0);
+        const watchTimeHours = ((item.watch_time || 0) / 3600).toFixed(1);
+        
+        const row = `
+            <tr>
+                <td>${date}</td>
+                <td>${views}</td>
+                <td>${uniqueViewers}</td>
+                <td>${watchTimeHours}</td>
+            </tr>
+        `;
+        tbody.innerHTML += row;
+    });
+}
+
+function exportAnalytics() {
+    if (!currentAnalyticsChannelId) {
+        showAlert('Please select a channel first', 'warning');
+        return;
+    }
+    
+    showAlert('Export functionality coming soon!', 'info');
+}
+
+function formatNumber(num) {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+function formatWatchTime(seconds) {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    
+    if (hours > 0) {
+        return `${hours}h ${minutes}m`;
+    }
+    return `${minutes}m`;
 }
 </script>
 {% endblock %}

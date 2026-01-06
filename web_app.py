@@ -286,6 +286,64 @@ def api_viewers(channel_id):
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/analytics/channels/<channel_id>/metrics')
+def api_channel_analytics(channel_id):
+    """Get analytics metrics for a channel."""
+    try:
+        from datetime import datetime, timedelta
+        
+        # Get date range from query parameters
+        days = request.args.get('days', 7, type=int)
+        start_date = datetime.utcnow() - timedelta(days=days)
+        
+        metrics = analytics_manager.get_channel_metrics(
+            channel_id=channel_id,
+            start_date=start_date
+        )
+        return jsonify(metrics)
+    except Exception as e:
+        logger.error(f"Error fetching analytics for channel {channel_id}: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/analytics/channels/<channel_id>/demographics')
+def api_channel_demographics(channel_id):
+    """Get viewer demographics for a channel."""
+    try:
+        from datetime import datetime, timedelta
+        
+        days = request.args.get('days', 7, type=int)
+        start_date = datetime.utcnow() - timedelta(days=days)
+        
+        demographics = analytics_manager.get_viewer_demographics(
+            channel_id=channel_id,
+            start_date=start_date
+        )
+        return jsonify(demographics)
+    except Exception as e:
+        logger.error(f"Error fetching demographics for channel {channel_id}: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/analytics/videos/<video_id>/metrics')
+def api_video_analytics(video_id):
+    """Get analytics metrics for a video."""
+    try:
+        from datetime import datetime, timedelta
+        
+        days = request.args.get('days', 30, type=int)
+        start_date = datetime.utcnow() - timedelta(days=days)
+        
+        metrics = analytics_manager.get_video_metrics(
+            video_id=video_id,
+            start_date=start_date
+        )
+        return jsonify(metrics)
+    except Exception as e:
+        logger.error(f"Error fetching analytics for video {video_id}: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     logger.info("Starting IBM Video Streaming Manager Web Application")
     app.run(debug=True, host='0.0.0.0', port=8080)
