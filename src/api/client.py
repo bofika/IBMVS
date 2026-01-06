@@ -122,8 +122,27 @@ class IBMVideoClient:
             raise ServerError(f"Server error: {response.status_code}")
         
         elif not response.ok:
-            error_msg = data.get('error', {}).get('message', 'Unknown error')
-            logger.error(f"API error: {error_msg}")
+            # Log detailed error information
+            logger.error(f"API Error - Status: {response.status_code}")
+            logger.error(f"API Error - URL: {response.url}")
+            logger.error(f"API Error - Response: {response.text[:500]}")  # First 500 chars
+            logger.error(f"API Error - Headers: {dict(response.headers)}")
+            
+            # Try to extract error message from various formats
+            error_msg = 'Unknown error'
+            if isinstance(data, dict):
+                # Try different error message locations
+                if 'error' in data:
+                    if isinstance(data['error'], dict):
+                        error_msg = data['error'].get('message', str(data['error']))
+                    else:
+                        error_msg = str(data['error'])
+                elif 'message' in data:
+                    error_msg = data['message']
+                elif 'error_description' in data:
+                    error_msg = data['error_description']
+            
+            logger.error(f"API error message: {error_msg}")
             raise APIError(error_msg, status_code=response.status_code, response=data)
         
         return data
