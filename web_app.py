@@ -348,6 +348,35 @@ def api_video_analytics(video_id):
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/analytics/debug/channels/<channel_id>')
+def api_debug_channel_analytics(channel_id):
+    """Debug endpoint to see raw API response."""
+    try:
+        from datetime import datetime, timedelta
+        
+        days = request.args.get('days', 30, type=int)
+        start_date = datetime.utcnow() - timedelta(days=days)
+        
+        # Get raw response
+        metrics = analytics_manager.get_channel_metrics(
+            channel_id=channel_id,
+            start_date=start_date
+        )
+        
+        # Log the response structure
+        logger.info(f"Raw API Response Keys: {list(metrics.keys()) if isinstance(metrics, dict) else 'Not a dict'}")
+        logger.info(f"Raw API Response: {metrics}")
+        
+        return jsonify({
+            'raw_response': metrics,
+            'response_type': str(type(metrics)),
+            'keys': list(metrics.keys()) if isinstance(metrics, dict) else None
+        })
+    except Exception as e:
+        logger.error(f"Error in debug endpoint: {e}", exc_info=True)
+        return jsonify({'error': str(e), 'traceback': str(e)}), 500
+
+
 if __name__ == '__main__':
     logger.info("Starting IBM Video Streaming Manager Web Application")
     app.run(debug=True, host='0.0.0.0', port=8080)
