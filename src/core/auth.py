@@ -426,16 +426,21 @@ class AuthManager:
         Get authentication headers for Analytics API requests.
         Uses JWT token instead of standard OAuth token.
         
+        Note: IBM Analytics API requires the JWT token WITHOUT the "Bearer" prefix.
+        The Authorization header should contain just the token itself.
+        
         Returns:
-            Dictionary of headers with JWT Authorization bearer token
+            Dictionary of headers with JWT Authorization token (no Bearer prefix)
         """
         jwt_token = self.get_jwt_token()
         if not jwt_token:
             logger.warning("No valid JWT token available for Analytics API")
             return {}
         
+        # IBM Analytics API requires JWT token WITHOUT "Bearer" prefix
+        # Format: Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6Ik...
         return {
-            'Authorization': f'Bearer {jwt_token}',
+            'Authorization': jwt_token,  # No "Bearer" prefix for Analytics API
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         }
