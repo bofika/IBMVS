@@ -228,8 +228,12 @@ def api_credentials():
             if not client_id or not client_secret:
                 return jsonify({'error': 'Missing credentials'}), 400
             
-            auth_manager.save_credentials(client_id, client_secret)
-            return jsonify({'success': True, 'message': 'Credentials saved'})
+            # Use set_credentials method (not save_credentials)
+            success = auth_manager.set_credentials(client_id, client_secret, save=True)
+            if success:
+                return jsonify({'success': True, 'message': 'Credentials saved successfully'})
+            else:
+                return jsonify({'error': 'Failed to save credentials'}), 500
         except Exception as e:
             logger.error(f"Error saving credentials: {e}")
             return jsonify({'error': str(e)}), 500
