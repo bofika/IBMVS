@@ -177,11 +177,11 @@
     </div>
     
     <!-- Analytics Loading -->
-    <div id="analytics-loading" class="text-center" style="display: none;">
-        <div class="spinner-border" role="status">
+    <div id="analytics-loading" class="analytics-loading" style="display: none;">
+        <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Loading...</span>
         </div>
-        <p class="mt-2">Loading analytics data...</p>
+        <p class="mt-3" style="color: #b0b0b0; font-size: 1.1rem;">Loading analytics data...</p>
     </div>
     
     <!-- Analytics Content -->
@@ -189,35 +189,27 @@
         <!-- Summary Cards -->
         <div class="row mb-4">
             <div class="col-md-3">
-                <div class="card text-center">
-                    <div class="card-body">
-                        <h6 class="card-subtitle mb-2 text-muted">Total Views</h6>
-                        <h2 id="total-views" class="card-title">-</h2>
-                    </div>
+                <div class="analytics-card text-center">
+                    <div class="metric-label">Total Views</div>
+                    <div id="total-views" class="metric-value">-</div>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card text-center">
-                    <div class="card-body">
-                        <h6 class="card-subtitle mb-2 text-muted">Unique Viewers</h6>
-                        <h2 id="unique-viewers" class="card-title">-</h2>
-                    </div>
+                <div class="analytics-card text-center">
+                    <div class="metric-label">Unique Viewers</div>
+                    <div id="unique-viewers" class="metric-value">-</div>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card text-center">
-                    <div class="card-body">
-                        <h6 class="card-subtitle mb-2 text-muted">Peak Viewers</h6>
-                        <h2 id="peak-viewers" class="card-title">-</h2>
-                    </div>
+                <div class="analytics-card text-center">
+                    <div class="metric-label">Peak Viewers</div>
+                    <div id="peak-viewers" class="metric-value">-</div>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card text-center">
-                    <div class="card-body">
-                        <h6 class="card-subtitle mb-2 text-muted">Watch Time</h6>
-                        <h2 id="watch-time" class="card-title">-</h2>
-                    </div>
+                <div class="analytics-card text-center">
+                    <div class="metric-label">Watch Time</div>
+                    <div id="watch-time" class="metric-value">-</div>
                 </div>
             </div>
         </div>
@@ -225,26 +217,18 @@
         <!-- Demographics -->
         <div class="row">
             <div class="col-md-6">
-                <div class="card mb-3">
-                    <div class="card-header">
-                        <h5><i class="bi bi-geo-alt"></i> Top Countries</h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="countries-list">
-                            <p class="text-muted">No data available</p>
-                        </div>
+                <div class="analytics-card">
+                    <h3><i class="bi bi-geo-alt"></i> Top Countries</h3>
+                    <div id="countries-list">
+                        <p class="text-muted">No data available</p>
                     </div>
                 </div>
             </div>
             <div class="col-md-6">
-                <div class="card mb-3">
-                    <div class="card-header">
-                        <h5><i class="bi bi-phone"></i> Top Devices</h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="devices-list">
-                            <p class="text-muted">No data available</p>
-                        </div>
+                <div class="analytics-card">
+                    <h3><i class="bi bi-phone"></i> Top Devices</h3>
+                    <div id="devices-list">
+                        <p class="text-muted">No data available</p>
                     </div>
                 </div>
             </div>
@@ -603,25 +587,64 @@ function showAnalyticsSection() {
 }
 
 function loadChannelsForAnalytics() {
-    $.ajax({
-        url: '/api/channels',
-        method: 'GET',
-        success: function(response) {
-            const select = document.getElementById('analytics-channel-select');
-            select.innerHTML = '<option value="">-- Select a channel --</option>';
-            
-            const channels = response.channels || [];
-            channels.forEach(channel => {
-                const option = document.createElement('option');
-                option.value = channel.id;
-                option.textContent = channel.title || 'Untitled';
-                select.appendChild(option);
-            });
-        },
-        error: function(xhr) {
-            showAlert('Error loading channels: ' + (xhr.responseJSON?.error || 'Unknown error'), 'danger');
-        }
-    });
+    const select = document.getElementById('analytics-channel-select');
+    select.innerHTML = '<option value="">Loading channels...</option>';
+    select.disabled = true;
+    
+    // Load all channels by fetching multiple pages
+    let allChannels = [];
+    let currentPage = 1;
+    const pageSize = 50;
+    
+    function fetchPage() {
+        $.ajax({
+            url: '/api/channels',
+            method: 'GET',
+            data: { page: currentPage, page_size: pageSize },
+            success: function(response) {
+                const channels = response.channels || [];
+                allChannels = allChannels.concat(channels);
+                
+                // Check if there are more pages
+                const paging = response.paging || {};
+                const totalCount = paging.item_count || paging.total || 0;
+                const hasMore = allChannels.length < totalCount;
+                
+                if (hasMore && channels.length === pageSize) {
+                    // Fetch next page
+                    currentPage++;
+                    fetchPage();
+                } else {
+                    // All channels loaded, populate dropdown
+                    select.innerHTML = '<option value="">-- Select a channel --</option>';
+                    select.disabled = false;
+                    
+                    // Sort channels alphabetically by title
+                    allChannels.sort((a, b) => {
+                        const titleA = (a.title || 'Untitled').toLowerCase();
+                        const titleB = (b.title || 'Untitled').toLowerCase();
+                        return titleA.localeCompare(titleB);
+                    });
+                    
+                    allChannels.forEach(channel => {
+                        const option = document.createElement('option');
+                        option.value = channel.id;
+                        option.textContent = channel.title || 'Untitled';
+                        select.appendChild(option);
+                    });
+                    
+                    console.log(`Loaded ${allChannels.length} channels`);
+                }
+            },
+            error: function(xhr) {
+                select.innerHTML = '<option value="">Error loading channels</option>';
+                select.disabled = false;
+                showAlert('Error loading channels: ' + (xhr.responseJSON?.error || 'Unknown error'), 'danger');
+            }
+        });
+    }
+    
+    fetchPage();
 }
 
 function onAnalyticsChannelChange() {
@@ -713,19 +736,18 @@ function displayDemographics(demographics) {
     const countries = demographics.countries || [];
     
     if (countries.length === 0) {
-        countriesList.innerHTML = '<p class="text-muted">No data available</p>';
+        countriesList.innerHTML = '<p class="text-muted" style="margin: 0;">No data available</p>';
     } else {
-        let html = '<div class="list-group list-group-flush">';
+        let html = '';
         countries.slice(0, 10).forEach(country => {
             const percentage = country.percentage || 0;
             html += `
-                <div class="list-group-item bg-transparent border-0 d-flex justify-content-between align-items-center">
-                    <span>${country.name || 'Unknown'}</span>
-                    <span class="badge bg-primary rounded-pill">${percentage.toFixed(1)}%</span>
+                <div class="demographics-item d-flex justify-content-between align-items-center">
+                    <span class="name">${country.name || 'Unknown'}</span>
+                    <span class="badge">${percentage.toFixed(1)}%</span>
                 </div>
             `;
         });
-        html += '</div>';
         countriesList.innerHTML = html;
     }
     
@@ -734,19 +756,18 @@ function displayDemographics(demographics) {
     const devices = demographics.devices || [];
     
     if (devices.length === 0) {
-        devicesList.innerHTML = '<p class="text-muted">No data available</p>';
+        devicesList.innerHTML = '<p class="text-muted" style="margin: 0;">No data available</p>';
     } else {
-        let html = '<div class="list-group list-group-flush">';
+        let html = '';
         devices.forEach(device => {
             const percentage = device.percentage || 0;
             html += `
-                <div class="list-group-item bg-transparent border-0 d-flex justify-content-between align-items-center">
-                    <span>${device.name || 'Unknown'}</span>
-                    <span class="badge bg-primary rounded-pill">${percentage.toFixed(1)}%</span>
+                <div class="demographics-item d-flex justify-content-between align-items-center">
+                    <span class="name">${device.name || 'Unknown'}</span>
+                    <span class="badge">${percentage.toFixed(1)}%</span>
                 </div>
             `;
         });
-        html += '</div>';
         devicesList.innerHTML = html;
     }
 }

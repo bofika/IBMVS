@@ -77,6 +77,84 @@
         .alert {
             margin-top: 20px;
         }
+        /* Analytics Dashboard Styles */
+        .analytics-card {
+            background-color: #2b2b2b;
+            border: 1px solid #3a3a3a;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .analytics-card h3 {
+            color: #ffffff;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            opacity: 0.9;
+        }
+        .analytics-card .metric-value {
+            color: #ffffff;
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 5px;
+        }
+        .analytics-card .metric-label {
+            color: #b0b0b0;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .demographics-item {
+            color: #ffffff;
+            padding: 8px 0;
+            border-bottom: 1px solid #3a3a3a;
+        }
+        .demographics-item:last-child {
+            border-bottom: none;
+        }
+        .demographics-item .name {
+            color: #ffffff;
+            font-weight: 500;
+        }
+        .demographics-item .badge {
+            background-color: #0d6efd;
+            color: #ffffff;
+            font-weight: 600;
+        }
+        #metrics-table-body td {
+            color: #ffffff;
+            padding: 12px;
+        }
+        #metrics-table-body th {
+            color: #b0b0b0;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+        .text-muted {
+            color: #888888 !important;
+        }
+        /* Improve form controls in analytics */
+        #analytics-section .form-select,
+        #analytics-section .form-control {
+            background-color: #3a3a3a;
+            border: 1px solid #555;
+            color: #ffffff;
+            font-weight: 500;
+        }
+        #analytics-section .form-select option {
+            background-color: #2b2b2b;
+            color: #ffffff;
+        }
+        /* Loading state */
+        .analytics-loading {
+            color: #b0b0b0;
+            text-align: center;
+            padding: 40px;
+        }
     </style>
     
     {% block extra_css %}{% endblock %}
