@@ -597,25 +597,43 @@ function loadChannelsForAnalytics() {
     const pageSize = 50;
     
     function fetchPage() {
+        console.log(`Fetching page ${currentPage} with page_size ${pageSize}...`);
+        
         $.ajax({
             url: '/api/channels',
             method: 'GET',
             data: { page: currentPage, page_size: pageSize },
             success: function(response) {
+                console.log(`Page ${currentPage} response:`, response);
+                
                 const channels = response.channels || [];
+                console.log(`  - Received ${channels.length} channels on this page`);
+                
                 allChannels = allChannels.concat(channels);
+                console.log(`  - Total channels so far: ${allChannels.length}`);
                 
                 // Check if there are more pages
+                // IBM API uses 'next' link in paging, not item_count
                 const paging = response.paging || {};
-                const totalCount = paging.item_count || paging.total || 0;
-                const hasMore = allChannels.length < totalCount;
+                console.log(`  - Paging info:`, paging);
                 
-                if (hasMore && channels.length === pageSize) {
+                const hasNextPage = paging.next && paging.next.href;
+                const receivedFullPage = channels.length === pageSize;
+                
+                console.log(`  - Has 'next' link: ${!!hasNextPage}`);
+                console.log(`  - Received full page: ${receivedFullPage}`);
+                
+                // Continue if we got a full page AND there's a next link
+                // OR if we got a full page (to be safe)
+                if (receivedFullPage && (hasNextPage || channels.length === pageSize)) {
                     // Fetch next page
+                    console.log(`  - Fetching next page (${currentPage + 1})...`);
                     currentPage++;
                     fetchPage();
                 } else {
                     // All channels loaded, populate dropdown
+                    console.log(`✓ All channels loaded! Total: ${allChannels.length}`);
+                    
                     select.innerHTML = '<option value="">-- Select a channel --</option>';
                     select.disabled = false;
                     
@@ -633,10 +651,14 @@ function loadChannelsForAnalytics() {
                         select.appendChild(option);
                     });
                     
-                    console.log(`Loaded ${allChannels.length} channels`);
+                    console.log(`✓ Dropdown populated with ${allChannels.length} channels`);
+                    
+                    // Show success message
+                    showAlert(`✓ Loaded all ${allChannels.length} channels successfully`, 'success');
                 }
             },
             error: function(xhr) {
+                console.error(`Error fetching page ${currentPage}:`, xhr);
                 select.innerHTML = '<option value="">Error loading channels</option>';
                 select.disabled = false;
                 showAlert('Error loading channels: ' + (xhr.responseJSON?.error || 'Unknown error'), 'danger');
